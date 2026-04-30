@@ -53,9 +53,11 @@
 - [ ] **Step 1: Scaffold the project.**
   ```bash
   cd /tmp
-  pnpx create-start-app@latest quickstart-reference --add-on cloudflare
+  pnpx create-start-app@latest quickstart-reference --add-ons cloudflare
   ```
-  When prompted, accept defaults (TypeScript, Vite, file-based routing). The `--add-on cloudflare` flag wires up the Cloudflare adapter; if the flag isn't recognized, run without it and we'll add it manually in Step 2.
+  Note: the flag is `--add-ons` (plural). The tool will warn that `create-start-app` is deprecated in favor of `npx @tanstack/cli create` — that's fine for now, the deprecated path still works. Accept defaults when prompted.
+
+  **Side effects of `--add-ons cloudflare`:** the scaffolder pre-installs Tailwind v4 (`@tailwindcss/vite`) and pre-wires the Cloudflare Vite plugin. That makes Task 3 (Tailwind) shorter than originally written.
 
 - [ ] **Step 2: Verify scaffold contents.**
   ```bash
@@ -69,43 +71,55 @@
   pnpm add -D @cloudflare/vite-plugin wrangler @cloudflare/workers-types
   ```
 
-- [ ] **Step 4: Update `vite.config.ts` to use the Cloudflare plugin.**
+- [ ] **Step 4: Verify (and minimally adjust) `vite.config.ts`.**
 
-  Replace the contents of `/tmp/quickstart-reference/vite.config.ts` with:
+  The scaffolder produces a config close to what we want. Verify the file looks like this (remove the `nitro` plugin if present — it conflicts with `@cloudflare/vite-plugin` and crashes dev with "initRunner is not a function"):
+
   ```typescript
   import { defineConfig } from "vite";
   import { tanstackStart } from "@tanstack/react-start/plugin/vite";
   import { cloudflare } from "@cloudflare/vite-plugin";
   import viteReact from "@vitejs/plugin-react";
-  import tsconfigPaths from "vite-tsconfig-paths";
+  import tailwindcss from "@tailwindcss/vite";
 
   export default defineConfig({
+    resolve: { tsconfigPaths: true },
     plugins: [
-      tsconfigPaths(),
       cloudflare({ viteEnvironment: { name: "ssr" } }),
       tanstackStart(),
       viteReact(),
+      tailwindcss(),
     ],
   });
   ```
-  If `vite-tsconfig-paths` isn't installed, run `pnpm add -D vite-tsconfig-paths`.
 
-- [ ] **Step 5: Create `wrangler.jsonc` if missing.**
+  Notes:
+  - `tailwindcss()` is included by the scaffolder when `--add-ons cloudflare` is passed. Keep it.
+  - `resolve: { tsconfigPaths: true }` is Vite's built-in path-alias support. Don't install `vite-tsconfig-paths` as a separate plugin.
+  - If you see a `nitro` import or plugin call in the scaffolded file, **remove both the import and the plugin call** before continuing. Confirmed-broken combo with `@cloudflare/vite-plugin@1.35+`.
+
+- [ ] **Step 5: Verify `wrangler.jsonc`.** The scaffolder creates this file. Confirm it matches the shape below; merge in any missing keys without overwriting working values:
   ```jsonc
   // /tmp/quickstart-reference/wrangler.jsonc
   {
     "$schema": "./node_modules/wrangler/config-schema.json",
     "name": "quickstart-reference",
-    "main": ".output/server/index.mjs",
+    "main": "@tanstack/react-start/server-entry",
     "compatibility_date": "2025-09-23",
     "compatibility_flags": ["nodejs_compat"],
     "assets": {
-      "directory": "./.output/public",
+      "directory": "./dist/client",
       "binding": "ASSETS"
     },
     "observability": { "enabled": true }
   }
   ```
+
+  Important shape notes (these supersede earlier drafts of this plan):
+  - `main` uses the package-resolved entry `@tanstack/react-start/server-entry`, **not** a path like `.output/server/index.mjs`. The Cloudflare Vite plugin auto-generates `dist/server/wrangler.json` at build time and resolves the entry there.
+  - Build output goes to `dist/server/` (Worker bundle) and `dist/client/` (static assets). There is no `.output/` directory.
+  - `wrangler deploy` reads `dist/server/wrangler.json` (the generated file) for actual deploy config — it composes that with the user-authored `wrangler.jsonc`.
+
   We'll add `d1_databases`, `kv_namespaces`, `durable_objects` in later tasks.
 
 - [ ] **Step 6: Verify dev server starts.**
@@ -118,7 +132,7 @@
   ```bash
   pnpm build
   ```
-  Expected: build completes without errors; `.output/server/index.mjs` and `.output/public/` exist. If the build fails, re-check Step 4's `vite.config.ts` against the doc snippet and re-query context7 if API has changed.
+  Expected: build completes without errors; `dist/server/index.js`, `dist/server/wrangler.json` (auto-generated), and `dist/client/` exist. If the build fails, re-check Step 4's `vite.config.ts` against the doc snippet and re-query context7 if API has changed.
 
 - [ ] **Step 8: Initialize git and commit.**
   ```bash
@@ -171,18 +185,15 @@
 
 - [ ] **Step 3: Update `wrangler.jsonc` with D1 + KV bindings.**
 
-  Replace `/tmp/quickstart-reference/wrangler.jsonc` with:
+  Add `d1_databases` and `kv_namespaces` arrays to the existing `wrangler.jsonc`. **Preserve all keys from Task 1** (especially `main: "@tanstack/react-start/server-entry"` and `assets.directory: "./dist/client"` — do NOT regress to `.output/` paths). Final shape:
   ```jsonc
   {
     "$schema": "./node_modules/wrangler/config-schema.json",
     "name": "quickstart-reference",
-    "main": ".output/server/index.mjs",
+    "main": "@tanstack/react-start/server-entry",
     "compatibility_date": "2025-09-23",
     "compatibility_flags": ["nodejs_compat"],
-    "assets": {
-      "directory": "./.output/public",
-      "binding": "ASSETS"
-    },
+    "assets": { "directory": "./dist/client", "binding": "ASSETS" },
     "observability": { "enabled": true },
     "d1_databases": [
       {
@@ -216,19 +227,26 @@
 
 ---
 
-## Task 3: Set up Tailwind v4 + shadcn/ui (`new-york`)
+## Task 3: Set up shadcn/ui (`new-york`) on top of the scaffolder's Tailwind v4
 
 **Files:**
-- Create: `src/styles/globals.css`, `components.json`, `src/lib/utils.ts`, `src/components/ui/*` (via CLI)
-- Modify: `src/routes/__root.tsx` (import globals.css), `vite.config.ts` (add Tailwind plugin), `tsconfig.json` (path aliases)
+- Create: `src/styles/globals.css` (overwrite scaffolder's stub if any), `components.json`, `src/lib/utils.ts`, `src/components/ui/*` (via CLI)
+- Modify: `src/routes/__root.tsx` (import globals.css if not already), `tsconfig.json` (path aliases)
 
-- [ ] **Step 1: Install Tailwind v4 + dependencies.**
+**Note:** The `--add-ons cloudflare` flag in Task 1 already installed `tailwindcss` and `@tailwindcss/vite`, and added `tailwindcss()` to `vite.config.ts`. Don't re-install Tailwind — you'll create a duplicate. Verify before adding deps:
+```bash
+cd /tmp/quickstart-reference && grep -E '"(tailwindcss|@tailwindcss/vite)"' package.json
+```
+Both should already be present as devDependencies. If they are, skip Step 1 and go directly to Step 2.
+
+- [ ] **Step 1 (skip if scaffolder already added Tailwind): Install shadcn-only deps.**
   ```bash
-  pnpm add -D tailwindcss@latest @tailwindcss/vite
   pnpm add tailwind-merge clsx class-variance-authority lucide-react
+  # only if Tailwind isn't already there:
+  # pnpm add -D tailwindcss@latest @tailwindcss/vite
   ```
 
-- [ ] **Step 2: Create `src/styles/globals.css`.**
+- [ ] **Step 2: Create `src/styles/globals.css`** (overwriting any scaffolder stub).
   ```css
   /* /tmp/quickstart-reference/src/styles/globals.css */
   @import "tailwindcss";
