@@ -128,3 +128,27 @@ This combinatorial cleanup is **not** encoded as Stage 2 region markers (would r
 **Worker type regeneration required:** Stage 3 must run `pnpm exec wrangler types` after stripping `wrangler.jsonc` regions, otherwise `worker-configuration.d.ts` retains stale `PRESENCE` binding type. (For Stage 2 validation, the binding's absence in the live wrangler.jsonc was sufficient — tests pass without regenerating the types file because the existing types file declares `PRESENCE` but no test references it after `tests/presence.test.ts` is deleted.)
 
 **Verification:** `pnpm typecheck && pnpm build && pnpm test` pass with 4 tests (auth: 2, kv: 2).
+
+---
+
+## Toggle: `vitest`
+
+**Validated:** 2026-05-01 against template at commit `d56f048`.
+
+**Whole-file/dir deletions:**
+- `tests/` (entire directory)
+- `vitest.config.ts`
+
+**Region strips (file → tag):**
+- `tsconfig.json`: `vitest` (1 region: `@cloudflare/vitest-pool-workers` types-array entry)
+
+**JSON edits:**
+- `package.json` `scripts`: remove keys `test`, `test:watch`.
+- `package.json` `devDependencies`: remove keys `@cloudflare/vitest-pool-workers`, `@testing-library/dom`, `@testing-library/react`, `jsdom`, `vitest`.
+
+**`vitest.config.ts` `include` setting:** Stage 1's plan-author note says vitest auto-discovers tests; we added `include: ["tests/**/*.test.ts"]` during Task 1 to keep vitest from descending into `reference/tests/`. With `vitest` off, `vitest.config.ts` itself is deleted, so the `include` setting is moot.
+
+**Verification:** `pnpm install && pnpm typecheck && pnpm build` pass; no `pnpm test` script (script removed).
+
+**Notes:**
+- After stripping the comma-followed `@cloudflare/vitest-pool-workers` entry from `tsconfig.json`'s `types` array, the array becomes `["vite/client", "@cloudflare/workers-types",]` (trailing comma). JSON5/JSONC tolerates this; TypeScript's tsconfig parser tolerates it too. Stage 3's manifest may want to clean up the trailing comma for tidiness, but it's not required.
