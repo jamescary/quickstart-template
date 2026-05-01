@@ -57,3 +57,48 @@
 **Notes:**
 - Stripping `org` outer regions transitively removes any nested `resend` regions (e.g., the `createEmailer` import). This is the documented "outer-first" stripping behavior.
 - The plan also says "wrap the entire `organization({...})` call but **not** the surrounding `plugins: []` declaration — the array stays even if empty." That's preserved here; better-auth accepts `plugins: []`.
+
+---
+
+## Toggle: `oauth.github` (validated)
+
+**Validated:** 2026-05-01 against template at commit `a575443`.
+
+**Whole-file deletions:** none.
+
+**Region strips (file → tag):**
+- `src/lib/auth/server.ts`: `oauth.github` (2 regions: AuthEnv keys, `social.github` block)
+- `src/components/auth/oauth-buttons.tsx`: `oauth.github` (1 region: button JSX)
+- `.dev.vars.example`: `oauth.github` (1 region: env keys)
+
+**JSON edits:** none.
+
+**Verification:** `pnpm typecheck && pnpm build && pnpm test` pass with 6 tests.
+
+---
+
+## Toggle: `oauth.google` (mirror — not separately validated)
+
+Symmetric to `oauth.github`:
+
+**Region strips (file → tag):**
+- `src/lib/auth/server.ts`: `oauth.google` (2 regions: AuthEnv keys, `social.google` block)
+- `src/components/auth/oauth-buttons.tsx`: `oauth.google` (1 region: button JSX)
+- `.dev.vars.example`: `oauth.google` (1 region: env keys)
+
+---
+
+## Combined: BOTH OAuth providers off
+
+When neither `oauth.github` nor `oauth.google` is selected, the result of stripping both regions is:
+
+- `src/lib/auth/server.ts`: AuthEnv has no provider keys; `social` object is `{}`; `socialProviders: social` still works (better-auth accepts empty `{}`).
+- `src/components/auth/oauth-buttons.tsx`: `OAuthButtons` returns `<div className="flex flex-col gap-2"></div>` (empty).
+- `.dev.vars.example`: no provider sections.
+- `src/routes/login.tsx` and `src/routes/signup.tsx`: still import and mount `OAuthButtons` — the empty div renders the "or" divider above an empty space. Acceptable but visually awkward.
+
+**Stage 3 enhancement (deferred from Stage 2):** when both providers are off, the skill may additionally:
+- Delete `src/components/auth/oauth-buttons.tsx`
+- Strip the `OAuthButtons` import + `<OAuthButtons />` JSX (and the `<div className="my-4 text-center text-xs text-muted-foreground">or</div>` divider) from `login.tsx` and `signup.tsx`.
+
+This combinatorial cleanup is **not** encoded as Stage 2 region markers (would require multi-toggle conditional logic). The skill performs it as a post-subtraction pass when both `oauth.*` toggles resolve false.
