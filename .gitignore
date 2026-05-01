@@ -1,0 +1,6 @@
+# The Stage 1 reference build is its own self-contained git repo.
+# Stage 2 will templatize it; until then, exclude from the outer template repo.
+reference/
+
+# macOS
+.DS_Store
