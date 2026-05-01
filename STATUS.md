@@ -1,6 +1,6 @@
 # quickstart-template — project status
 
-**Last updated:** 2026-05-01
+**Last updated:** 2026-05-01 (Stage 3 complete)
 
 This is the working directory for the **quickstart-template** project: a Cloudflare-native full-stack starter (TanStack Start · Drizzle · D1 · KV · Durable Objects · better-auth · Resend) plus an agent-driven setup skill that interviews users and customizes new projects from the template. See `docs/superpowers/specs/2026-04-30-quickstart-template-design.md` for the full design.
 
@@ -11,7 +11,7 @@ This is the working directory for the **quickstart-template** project: a Cloudfl
 | **Brainstorm + spec** | ✅ Done | `docs/superpowers/specs/2026-04-30-quickstart-template-design.md` |
 | **Stage 1 — reference app build** | ✅ Done (2026-05-01) | `reference/` (44 commits) deployed at `https://quickstart-reference.eliteeggnog.workers.dev`. Per-task log + Files Inventory at `reference/BUILD_NOTES.md`. Plan: `docs/superpowers/plans/2026-04-30-stage1-reference-app.md`. |
 | **Stage 2 — templatize** | ✅ Done (2026-05-01) | Reference copied to repo root with region markers + sentinels. Subtraction validated by hand for all 5 toggles. Subtraction recipes captured at `docs/superpowers/specs/2026-05-01-stage2-subtraction-recipes.md`. Plan: `docs/superpowers/plans/2026-05-01-stage2-templatize.md`. Bootstrap files (`install.sh`, `install.md`, `.quickstart-template`, user-facing `README.md`) added. Template at-rest typechecks; does not build or run until Stage 3 substitutes sentinels and provisions IDs. |
-| **Stage 3 — build setup skill** | ⏳ Pending | `.claude/skills/quickstart-setup/` with manifest, interview, cloudflare, credentials sub-files. Plan to be written. |
+| **Stage 3 — build setup skill** | ✅ Done (2026-05-01) | `.claude/skills/quickstart-setup/` — `SKILL.md`, `manifest.json`, `interview.md`, `cloudflare.md`, `credentials.md`, `scaffold-feature.md`, `TEMPLATE_URL`. Plan: `docs/superpowers/plans/2026-05-01-stage3-build-skill.md`. E2E tests (Tasks 13–15) require interactive Claude Code sessions in scratch dirs; instructions captured in `STAGE3_NOTES.md` for the user to run, then folded back here. `__GH_USER__` substituted to `jamescry`. Template ready to publish. |
 
 ## Where things live
 
@@ -24,11 +24,20 @@ This is the working directory for the **quickstart-template** project: a Cloudfl
 ├── .quickstart-template                         # marker for skill entry detection
 ├── package.json, wrangler.jsonc, tsconfig.json, ...  # full template (sentinelized)
 ├── src/, tests/, drizzle/                       # template source (region-marked)
+├── .claude/skills/quickstart-setup/             # Stage 3 output: the setup skill (auto-loaded)
+│   ├── SKILL.md                                 # frontmatter + lifecycle + Apply Steps 1–11
+│   ├── manifest.json                            # declarative subtraction spec (6 toggles + combinatorial)
+│   ├── interview.md                             # Phase 1/2/3/6 question scripts
+│   ├── cloudflare.md                            # Phase 4 wrangler provisioning
+│   ├── credentials.md                           # Phase 5 OAuth/Resend walkthroughs + deploy-secrets.sh template
+│   ├── scaffold-feature.md                      # Apply Step 6 (only generative phase)
+│   └── TEMPLATE_URL                             # plain-text template URL (used by global-install mode)
 ├── docs/superpowers/
 │   ├── specs/2026-04-30-quickstart-template-design.md
 │   ├── specs/2026-05-01-stage2-subtraction-recipes.md   # Stage 2 output: per-toggle subtraction recipes (Stage 3 input)
 │   ├── plans/2026-04-30-stage1-reference-app.md   # Stage 1 plan, complete
-│   └── plans/2026-05-01-stage2-templatize.md      # Stage 2 plan, complete
+│   ├── plans/2026-05-01-stage2-templatize.md      # Stage 2 plan, complete
+│   └── plans/2026-05-01-stage3-build-skill.md     # Stage 3 plan, complete
 └── reference/                                   # Stage 1 output (NESTED git repo, gitignored)
     ├── BUILD_NOTES.md                           # 1145 lines: per-task log + Files Inventory
     └── ... (full working app)
@@ -36,12 +45,12 @@ This is the working directory for the **quickstart-template** project: a Cloudfl
 
 ## To pick up where we left off
 
-A fresh session resuming this project should:
+Stages 1, 2, and 3 are complete. The template is **ready to publish**: push this repo to `https://github.com/jamescry/quickstart-template` and `install.sh` / `TEMPLATE_URL` will resolve. Pending validation: the three E2E test combinations described in `STAGE3_NOTES.md` need to be run by the user in fresh Claude Code sessions; results fold back into this file.
 
-1. Read this `STATUS.md`.
-2. Skim `docs/superpowers/specs/2026-04-30-quickstart-template-design.md` (the design — read at minimum the Architecture, Subtractive Transformation, and Development Plan sections).
-3. Read `reference/BUILD_NOTES.md`'s Files Inventory section near the end (the Stage 2 input).
-4. Decide what to do next — most likely **write the Stage 3 plan** using the `superpowers:writing-plans` skill, with `docs/superpowers/specs/2026-05-01-stage2-subtraction-recipes.md` as the primary input for `manifest.json` and `reference/BUILD_NOTES.md` as the source for cloudflare/credentials/scaffold-feature instructions. Save the resulting plan to `docs/superpowers/plans/YYYY-MM-DD-stage3-build-skill.md`.
+Optional next steps:
+- Run E2E tests per `STAGE3_NOTES.md` (3 fresh sessions; ~10–30 minutes each).
+- Tag a release: `git tag -a v0.1.0 -m "First publishable release of quickstart-template"`.
+- Push to GitHub and verify `install.sh` works against the public repo.
 
 ## Stage 1 known limitations (worth knowing for Stage 2/3)
 
@@ -74,6 +83,14 @@ These are the non-obvious ones, all documented in BUILD_NOTES with reasoning:
 - **`scripts/deploy-secrets.sh` is not in the template.** Stage 3 generates it during the Apply phase from the user's chosen `.dev.vars` keys.
 - **`__GH_USER__` placeholder in `install.sh` and `install.md`.** Stage 3 (or template publishing step) must replace this with the actual GitHub user/org hosting the template repo.
 - **`tsconfig.json` excludes `reference/` and `vitest.config.ts` `test.include` is scoped to `tests/`.** Both adjustments were necessary because `reference/` (Stage 1's git-ignored archive) sits at the repo root; without them, tooling spans the reference's own deps and tests. These exclusions are part of the template's permanent shape.
+
+## Stage 3 known limitations / things deferred
+
+- **Workers Git Integration's last step is manual.** No fully-automated API as of 2026-05-01 — after `gh repo create`, the user must connect the repo via the Cloudflare dashboard. The skill's Apply Step 9 prints the dashboard URL and walks through the click-path.
+- **Programmatic superpowers install may not work in all Claude Code versions.** Apply Step 10 writes `enabledPlugins: ["superpowers"]` into `.claude/settings.json` and falls back to printing `/plugin install superpowers` if the write fails. Treat this as best-effort; the print fallback is the never-silently-broken path.
+- **`gh` CLI is required for the Workers Git Integration auto-path.** If the user answers `y` to Q10 but `gh` is absent or unauthenticated, Apply Step 9 prints manual setup steps instead of failing.
+- **First-feature scaffold is intentionally minimal** — list + inline create form only. Edit, delete, optimistic updates, pagination, sharing UI, and tests for the new feature are deferred to the user.
+- **E2E tests not yet run by the agent.** The skill is interactive (interview-driven), and the plan's Tasks 13–15 require fresh Claude Code sessions in scratch dirs. Instructions are captured in `STAGE3_NOTES.md` for the user to run; results should be folded back into this file under a "Stage 3 E2E findings" section once available.
 
 ## Stage 2 patterns Stage 3 should preserve verbatim
 
