@@ -4,7 +4,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/<USER>/quickstart-template/main/install.sh | bash -s -- my-app
 set -euo pipefail
 
-TEMPLATE_REPO="https://github.com/__GH_USER__/quickstart-template.git"   # Stage 3 fills __GH_USER__ at publish time
+TEMPLATE_REPO="https://github.com/jamescry/quickstart-template.git"
 TARGET="${1:-}"
 
 if [[ -z "$TARGET" ]]; then
