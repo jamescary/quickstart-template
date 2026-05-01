@@ -113,7 +113,153 @@ If `tsc` fails, the most likely cause is a missed reference. Surface the error v
 
 Run the Apply phase steps below. **Commit after each step** so a crash is recoverable.
 
-[The detailed Apply-phase steps are filled in by Tasks 10–12 below — leave the section here as a placeholder pointing at "see Apply-phase substeps" until those tasks fill it in.]
+The Apply phase mutates source files. **Commit after each numbered step** so a crash leaves a recoverable state.
+
+### Apply Step 1 — Subtract opted-out features
+
+Run the manifest-driven subtraction (see "Subtraction algorithm" earlier in this file).
+
+For each toggle whose value is **false**:
+- Run all `delete` ops.
+- Run all `strip` ops.
+- Run all `edit_json` ops.
+- Run all `replace_file` ops (only `do` has these — the `tests/worker-entry.ts` rewrite).
+
+After all per-toggle ops, evaluate `manifest.json["post_subtraction_combinatorial"]`. Currently only `no_oauth_providers` exists; if it triggers, run its `delete` + `regex_strip` ops.
+
+Verify:
+```bash
+pnpm install
+pnpm exec tsc --noEmit
+```
+
+If `tsc` fails, surface the full output to the user and halt — do not attempt automated recovery. The most likely cause is a stripped region that left a dangling reference; check `git diff` for the file in the error.
+
+Commit:
+```bash
+git add -A
+git commit -m "chore(quickstart-setup): subtract opted-out features"
+```
+
+### Apply Step 2 — Substitute sentinels
+
+Replace the four sentinels globally. Use `find` + `sed` (BSD sed on macOS requires `-i ''`):
+
+```bash
+# Define replacements (use the user's captured values; no shell expansion of values)
+PROJECT_NAME='<value from Q1>'
+PROJECT_SLUG='<value from Q2>'
+PROJECT_DESCRIPTION='<value from Q3>'
+BRAND_COLOR='<value from Q4>'
+
+# Files to scan: every text file under the project tree, excluding .git, node_modules, dist, .wrangler
+find . -type f \
+  ! -path './.git/*' \
+  ! -path './node_modules/*' \
+  ! -path './dist/*' \
+  ! -path './.wrangler/*' \
+  -exec grep -lE '__PROJECT_(NAME|SLUG|DESCRIPTION)__|__BRAND_COLOR__' {} + \
+| while read -r f; do
+    # Use a sed delimiter that won't appear in any value (pipe).
+    sed -i '' \
+      -e "s|__PROJECT_NAME__|${PROJECT_NAME//|/\\|}|g" \
+      -e "s|__PROJECT_SLUG__|${PROJECT_SLUG}|g" \
+      -e "s|__PROJECT_DESCRIPTION__|${PROJECT_DESCRIPTION//|/\\|}|g" \
+      -e "s|__BRAND_COLOR__|${BRAND_COLOR}|g" \
+      "$f"
+  done
+```
+
+Caveats:
+- `PROJECT_DESCRIPTION` may contain quotes. The skill must JSON-escape it for `package.json` BEFORE running sed. Easier: write `package.json` separately via a JSON write, AFTER running the global sed (it will idempotently re-replace from a substituted value to the same substituted value — no-op).
+- If sed-on-macOS produces backup files (`-i ''` should not, but verify), clean them up: `find . -name '*-e' -path '*/__sed__*' -delete`.
+
+Verify no sentinels remain:
+```bash
+! grep -rEn '__PROJECT_(NAME|SLUG|DESCRIPTION)__|__BRAND_COLOR__' . \
+  --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.wrangler
+```
+
+Expected: no output (the leading `!` makes `0 matches` exit 0).
+
+Commit:
+```bash
+git add -A
+git commit -m "chore(quickstart-setup): substitute project sentinels"
+```
+
+### Apply Step 3 — Apply brand color to shadcn `--primary`
+
+The `__BRAND_COLOR__` substitution above already replaced the sentinel in `src/lib/auth/server.ts` (the invitation-email button). The shadcn theme in `src/styles.css` uses HSL-space tokens (`222.2 47.4% 11.2%`), not hex — a separate hex→HSL conversion patches `--primary` (and `--primary-foreground` flips for contrast).
+
+Convert the user's `BRAND_COLOR` (hex) to HSL:
+
+```bash
+pnpm exec node --input-type=module -e '
+const hex = process.argv[1].replace(/^#/, "");
+const r = parseInt(hex.slice(0,2), 16) / 255;
+const g = parseInt(hex.slice(2,4), 16) / 255;
+const b = parseInt(hex.slice(4,6), 16) / 255;
+const max = Math.max(r,g,b), min = Math.min(r,g,b);
+const l = (max+min)/2;
+let h = 0, s = 0;
+if (max !== min) {
+  const d = max - min;
+  s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+  switch(max){
+    case r: h = (g-b)/d + (g<b ? 6:0); break;
+    case g: h = (b-r)/d + 2; break;
+    case b: h = (r-g)/d + 4; break;
+  }
+  h /= 6;
+}
+const H = (h*360).toFixed(1);
+const S = (s*100).toFixed(1);
+const L = (l*100).toFixed(1);
+const fg = l > 0.5 ? "0 0% 9%" : "0 0% 98%";
+console.log(`${H} ${S}% ${L}%|${fg}`);
+' '<BRAND_COLOR>'
+```
+
+Output is two HSL strings separated by `|`: e.g., `222.2 47.4% 11.2%|0 0% 98%`.
+
+Patch `src/styles.css`:
+
+```bash
+PRIMARY_HSL='<the first part>'
+PRIMARY_FG_HSL='<the second part>'
+sed -i '' \
+  -e "s/--primary: 222\.2 47\.4% 11\.2%;/--primary: ${PRIMARY_HSL};/" \
+  -e "s/--primary-foreground: 210 40% 98%;/--primary-foreground: ${PRIMARY_FG_HSL};/" \
+  src/styles.css
+```
+
+(The dark-block `--primary: 210 40% 98%;` line stays as-is — dark-mode primary uses the contrast color, not the brand color directly. If you want the dark-mode primary to be the brand color too, that's a hand-edit the user does after the skill finishes.)
+
+Commit:
+```bash
+git add -A
+git commit -m "chore(quickstart-setup): apply brand color to shadcn theme"
+```
+
+### Apply Step 4 — Regenerate auth schema
+
+After subtracting `org` (or any other auth-plugin-affecting toggle), the auth-schema file may contain tables that no longer have a corresponding plugin in `auth.ts`. Regenerate from scratch:
+
+```bash
+pnpm exec @better-auth/cli@1.4.22 generate \
+  --config src/lib/auth/server.ts \
+  --output src/db/auth-schema.ts \
+  --yes
+```
+
+Expected: the CLI emits a "Base URL could not be determined" warning (expected — no env in CLI mode) and writes `src/db/auth-schema.ts` with only the tables corresponding to enabled plugins. If `org` is off, the `organizations` / `members` / `invitations` tables are absent from the regenerated file.
+
+Commit:
+```bash
+git add src/db/auth-schema.ts
+git commit -m "chore(quickstart-setup): regenerate auth-schema for selected plugins"
+```
 
 ## Self-removal
 
