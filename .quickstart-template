@@ -1,0 +1,5 @@
+This file marks the directory as an unconfigured quickstart-template clone.
+The setup skill (.claude/skills/quickstart-setup) checks for this file to know
+it should run the interview. The skill deletes this file in its final commit.
+
+Do not edit or commit changes to this file.
