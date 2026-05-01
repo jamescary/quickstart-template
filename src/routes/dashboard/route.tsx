@@ -5,7 +5,9 @@ import { getRequest } from "@tanstack/react-start/server";
 import { env } from "cloudflare:workers";
 import { createAuth, type AuthEnv } from "@/lib/auth/server";
 import ThemeToggle from "@/components/ThemeToggle";
+// #region quickstart:if=org
 import { OrgSwitcher } from "@/components/org-switcher";
+// #endregion
 import { Button } from "@/components/ui/button";
 
 const getSessionServer = createServerFn({ method: "GET" }).handler(async () => {
@@ -35,7 +37,9 @@ function DashboardLayout() {
           Quickstart Reference
         </Link>
         <div className="flex items-center gap-2">
+          {/* #region quickstart:if=org */}
           <OrgSwitcher />
+          {/* #endregion */}
           <ThemeToggle />
           <Button
             variant="outline"

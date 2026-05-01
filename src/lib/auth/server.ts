@@ -5,7 +5,9 @@ import type {
 } from "@cloudflare/workers-types";
 import { betterAuth } from "better-auth";
 import { withCloudflare } from "better-auth-cloudflare";
+// #region quickstart:if=org
 import { organization } from "better-auth/plugins";
+// #endregion
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "@/db/schema";
@@ -66,6 +68,7 @@ export function createAuth(
         emailAndPassword: { enabled: true },
         socialProviders: social,
         plugins: [
+          // #region quickstart:if=org
           organization({
             organizationHooks: {
               afterCreateInvitation: async ({ invitation, organization, inviter }) => {
@@ -89,6 +92,7 @@ export function createAuth(
               },
             },
           }),
+          // #endregion
         ],
         rateLimit: {
           enabled: true,

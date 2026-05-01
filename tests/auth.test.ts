@@ -36,7 +36,17 @@ describe("D1 migrations + auth schema", () => {
 
   it("all required auth tables exist (sessions, accounts, verifications)", async () => {
     // Each prepare() call will throw if the table doesn't exist.
-    const tables = ["users", "sessions", "accounts", "verifications", "organizations", "members", "invitations"];
+    const tables = [
+      "users",
+      "sessions",
+      "accounts",
+      "verifications",
+      // #region quickstart:if=org
+      "organizations",
+      "members",
+      "invitations",
+      // #endregion
+    ];
     for (const table of tables) {
       const result = await env.DB
         .prepare(`SELECT COUNT(*) as count FROM ${table}`)
