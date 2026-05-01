@@ -79,8 +79,8 @@ export function createAuth(
           // #region quickstart:if=org
           organization({
             organizationHooks: {
+              // #region quickstart:if=resend
               afterCreateInvitation: async ({ invitation, organization, inviter }) => {
-                // #region quickstart:if=resend
                 if (!env) return; // CLI/no-runtime-env path; nothing to send
                 const emailer = createEmailer(env);
                 const acceptUrl = `${env.BETTER_AUTH_URL}/accept-invitation/${invitation.id}`;
@@ -96,8 +96,8 @@ export function createAuth(
                     </div>
                   `,
                 });
-                // #endregion
               },
+              // #endregion
             },
           }),
           // #endregion
