@@ -1,8 +1,12 @@
 # Stage 1: Reference App Implementation Plan
 
+> **Status: ✅ COMPLETE (2026-05-01).** Reference app deployed at `https://quickstart-reference.eliteeggnog.workers.dev`. 44 commits in `reference/`. Build clean, 6/6 tests pass. See `reference/BUILD_NOTES.md` for the per-task implementation log including all gotchas, the Files Inventory grouped by toggle (Stage 2 input), and the Stage 1 completion summary at the end.
+>
+> The text below was the plan as written; corrections discovered during execution are reflected inline. Where reality diverged from the plan (e.g., `dist/` vs `.output/`, `--add-ons` plural, the `nitro` plugin removal, the `createServerEntry` pattern for DO export), the plan has been updated to match what actually worked.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Bootstrap a real, working, deployed full-stack reference app at `/tmp/quickstart-reference/` with every feature on (no toggles, no skill). This output is the source material for Stage 2 (templatize) and Stage 3 (build skill).
+**Goal:** Bootstrap a real, working, deployed full-stack reference app at `/Users/jamescary/dev/quickstart-template/reference/` with every feature on (no toggles, no skill). This output is the source material for Stage 2 (templatize) and Stage 3 (build skill).
 
 **Architecture:** Single-package TanStack Start app on Cloudflare Workers. Drizzle + D1 for data, KV for rate limiting and ephemeral cache, one Durable Object for real-time presence. better-auth (via `better-auth-cloudflare`) for auth with email/password + GitHub/Google OAuth + organization plugin. Resend for transactional email. Tailwind v4 + shadcn/ui (`new-york`) for UI. Vitest + `@cloudflare/vitest-pool-workers` for tests. pnpm for package management.
 
@@ -27,12 +31,12 @@
 
 - [ ] **Create the working directory.**
   ```bash
-  rm -rf /tmp/quickstart-reference
-  mkdir -p /tmp/quickstart-reference
-  cd /tmp/quickstart-reference
+  rm -rf /Users/jamescary/dev/quickstart-template/reference
+  mkdir -p /Users/jamescary/dev/quickstart-template/reference
+  cd /Users/jamescary/dev/quickstart-template/reference
   ```
 
-- [ ] **Start `BUILD_NOTES.md`.** Create the file at `/tmp/quickstart-reference/BUILD_NOTES.md` with this header:
+- [ ] **Start `BUILD_NOTES.md`.** Create the file at `/Users/jamescary/dev/quickstart-template/reference/BUILD_NOTES.md` with this header:
   ```markdown
   # BUILD_NOTES — Quickstart Reference App
 
@@ -47,7 +51,7 @@
 ## Task 1: Bootstrap TanStack Start with Cloudflare Vite plugin
 
 **Files:**
-- Create (via CLI): everything under `/tmp/quickstart-reference/`
+- Create (via CLI): everything under `/Users/jamescary/dev/quickstart-template/reference/`
 - Modify: `vite.config.ts`, `wrangler.jsonc` (created by template; we extend it)
 
 - [ ] **Step 1: Scaffold the project.**
@@ -61,7 +65,7 @@
 
 - [ ] **Step 2: Verify scaffold contents.**
   ```bash
-  cd /tmp/quickstart-reference
+  cd /Users/jamescary/dev/quickstart-template/reference
   ls -la
   ```
   Expected to see `package.json`, `vite.config.ts`, `tsconfig.json`, `src/routes/__root.tsx`, `src/routes/index.tsx`. If `wrangler.jsonc` is missing (no `--add-on cloudflare`), proceed to Step 3 to add it.
@@ -100,7 +104,7 @@
 
 - [ ] **Step 5: Verify `wrangler.jsonc`.** The scaffolder creates this file. Confirm it matches the shape below; merge in any missing keys without overwriting working values:
   ```jsonc
-  // /tmp/quickstart-reference/wrangler.jsonc
+  // /Users/jamescary/dev/quickstart-template/reference/wrangler.jsonc
   {
     "$schema": "./node_modules/wrangler/config-schema.json",
     "name": "quickstart-reference",
@@ -152,7 +156,7 @@
 
 - [ ] **Step 1: Create the D1 database.**
   ```bash
-  cd /tmp/quickstart-reference
+  cd /Users/jamescary/dev/quickstart-template/reference
   wrangler d1 create quickstart-reference-db
   ```
   Capture the output. It includes a JSONC snippet like:
@@ -215,7 +219,7 @@
   ```
   Expected: creates/updates `worker-configuration.d.ts` with typed `Env`. Verify the file exists and contains `interface Env { DB: D1Database; KV: KVNamespace; ... }`.
 
-- [ ] **Step 5: Update `tsconfig.json`** to include the generated types. Open `/tmp/quickstart-reference/tsconfig.json` and ensure `compilerOptions.types` contains `"@cloudflare/workers-types"` and `"./worker-configuration.d.ts"` is referenced via `include` (or via `types`).
+- [ ] **Step 5: Update `tsconfig.json`** to include the generated types. Open `/Users/jamescary/dev/quickstart-template/reference/tsconfig.json` and ensure `compilerOptions.types` contains `"@cloudflare/workers-types"` and `"./worker-configuration.d.ts"` is referenced via `include` (or via `types`).
 
 - [ ] **Step 6: Commit.**
   ```bash
@@ -235,7 +239,7 @@
 
 **Note:** The `--add-ons cloudflare` flag in Task 1 already installed `tailwindcss` and `@tailwindcss/vite`, and added `tailwindcss()` to `vite.config.ts`. Don't re-install Tailwind — you'll create a duplicate. Verify before adding deps:
 ```bash
-cd /tmp/quickstart-reference && grep -E '"(tailwindcss|@tailwindcss/vite)"' package.json
+cd /Users/jamescary/dev/quickstart-template/reference && grep -E '"(tailwindcss|@tailwindcss/vite)"' package.json
 ```
 Both should already be present as devDependencies. If they are, skip Step 1 and go directly to Step 2.
 
@@ -248,7 +252,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 2: Create `src/styles/globals.css`** (overwriting any scaffolder stub).
   ```css
-  /* /tmp/quickstart-reference/src/styles/globals.css */
+  /* /Users/jamescary/dev/quickstart-template/reference/src/styles/globals.css */
   @import "tailwindcss";
 
   @custom-variant dark (&:is(.dark *));
@@ -296,7 +300,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
   body { @apply bg-background text-foreground; }
   ```
 
-- [ ] **Step 3: Add Tailwind Vite plugin.** Edit `/tmp/quickstart-reference/vite.config.ts` — add `tailwindcss()` to `plugins`:
+- [ ] **Step 3: Add Tailwind Vite plugin.** Edit `/Users/jamescary/dev/quickstart-template/reference/vite.config.ts` — add `tailwindcss()` to `plugins`:
   ```typescript
   import tailwindcss from "@tailwindcss/vite";
   // ...
@@ -309,14 +313,14 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
   ],
   ```
 
-- [ ] **Step 4: Import globals in root route.** Edit `/tmp/quickstart-reference/src/routes/__root.tsx` — add at the top:
+- [ ] **Step 4: Import globals in root route.** Edit `/Users/jamescary/dev/quickstart-template/reference/src/routes/__root.tsx` — add at the top:
   ```typescript
   import "../styles/globals.css";
   ```
 
 - [ ] **Step 5: Create `src/lib/utils.ts`.**
   ```typescript
-  // /tmp/quickstart-reference/src/lib/utils.ts
+  // /Users/jamescary/dev/quickstart-template/reference/src/lib/utils.ts
   import { clsx, type ClassValue } from "clsx";
   import { twMerge } from "tailwind-merge";
 
@@ -374,7 +378,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 1: Install Drizzle.**
   ```bash
-  cd /tmp/quickstart-reference
+  cd /Users/jamescary/dev/quickstart-template/reference
   pnpm add drizzle-orm
   pnpm add -D drizzle-kit
   ```
@@ -383,10 +387,6 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
   `.dev.vars` (gitignored — local only):
   ```
-  CLOUDFLARE_ACCOUNT_ID=<your account ID from preflight>
-  CLOUDFLARE_DATABASE_ID=<D1 UUID from Task 2>
-  CLOUDFLARE_D1_TOKEN=<we'll create this in Step 3>
-
   BETTER_AUTH_SECRET=<run: openssl rand -base64 32>
   BETTER_AUTH_URL=http://localhost:3000
 
@@ -397,14 +397,16 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
   RESEND_API_KEY=
   RESEND_FROM_EMAIL=onboarding@resend.dev
+
+  # Optional — only if you want `pnpm db:studio` or `drizzle-kit push`.
+  # `pnpm db:migrate:local` / `db:migrate:remote` use wrangler's OAuth and don't need this.
+  # CLOUDFLARE_ACCOUNT_ID=
+  # CLOUDFLARE_DATABASE_ID=
+  # CLOUDFLARE_D1_TOKEN=
   ```
 
-  `.dev.vars.example` (committed — placeholders):
+  `.dev.vars.example` (committed — placeholders, mirrors above):
   ```
-  CLOUDFLARE_ACCOUNT_ID=
-  CLOUDFLARE_DATABASE_ID=
-  CLOUDFLARE_D1_TOKEN=
-
   BETTER_AUTH_SECRET=
   BETTER_AUTH_URL=http://localhost:3000
 
@@ -415,54 +417,54 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
   RESEND_API_KEY=
   RESEND_FROM_EMAIL=onboarding@resend.dev
+
+  # Optional — only if you want `pnpm db:studio` or `drizzle-kit push`.
+  # CLOUDFLARE_ACCOUNT_ID=
+  # CLOUDFLARE_DATABASE_ID=
+  # CLOUDFLARE_D1_TOKEN=
   ```
 
-  Append to `.gitignore`:
+  Append to `.gitignore` (note `.dev.vars` was already added in Task 1's fix-up; verify before adding again):
   ```
-  .dev.vars
   .wrangler
-  .output
   drizzle/migrations/meta/
   ```
 
-- [ ] **Step 3: Create a D1 API token.** Open https://dash.cloudflare.com/profile/api-tokens, create a token using the **"Edit Cloudflare Workers"** template (or a custom token with `Account > D1 > Edit` and `Account > Workers Scripts > Edit`). Paste the token into `.dev.vars` as `CLOUDFLARE_D1_TOKEN`. Record (in `BUILD_NOTES.md`) the exact permissions used — the skill will need this for its credentials walkthrough later.
+- [ ] **Step 3: ~~Create a D1 API token.~~ Skipped for Stage 1.** Drizzle-kit's d1-http driver only needs an API token for commands that connect to D1 (`drizzle-kit push`, `drizzle-kit studio`). Stage 1 uses `pnpm db:generate` (which only produces SQL files locally — no connection) and `wrangler d1 migrations apply` (which uses the user's wrangler OAuth — no separate token). The optional `CLOUDFLARE_D1_TOKEN` is documented in `.dev.vars.example` for users who want studio/push later.
 
 - [ ] **Step 4: Create `drizzle.config.ts`.**
   ```typescript
-  // /tmp/quickstart-reference/drizzle.config.ts
-  import "dotenv/config";
+  // /Users/jamescary/dev/quickstart-template/reference/drizzle.config.ts
   import { defineConfig } from "drizzle-kit";
 
   export default defineConfig({
     out: "./drizzle/migrations",
     schema: "./src/db/schema.ts",
     dialect: "sqlite",
-    driver: "d1-http",
-    dbCredentials: {
-      accountId: process.env.CLOUDFLARE_ACCOUNT_ID!,
-      databaseId: process.env.CLOUDFLARE_DATABASE_ID!,
-      token: process.env.CLOUDFLARE_D1_TOKEN!,
-    },
+    // No `driver` — `pnpm db:generate` doesn't need one. If a future command
+    // needs to connect to D1 (push/studio), uncomment below and set credentials in .dev.vars.
+    // driver: "d1-http",
+    // dbCredentials: {
+    //   accountId: process.env.CLOUDFLARE_ACCOUNT_ID!,
+    //   databaseId: process.env.CLOUDFLARE_DATABASE_ID!,
+    //   token: process.env.CLOUDFLARE_D1_TOKEN!,
+    // },
   });
   ```
-  Install dotenv: `pnpm add -D dotenv`. Add a `predrizzle` env-load step or just run drizzle-kit with env vars sourced from `.dev.vars`:
-  ```bash
-  pnpm add -D dotenv-cli
-  ```
-  Then add scripts to `package.json`:
+
+  Add scripts to `package.json`:
   ```json
   "scripts": {
-    "db:generate": "dotenv -e .dev.vars -- drizzle-kit generate",
-    "db:push": "dotenv -e .dev.vars -- drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply quickstart-reference-db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply quickstart-reference-db --remote",
-    "db:studio": "dotenv -e .dev.vars -- drizzle-kit studio"
+    "db:migrate:remote": "wrangler d1 migrations apply quickstart-reference-db --remote"
   }
   ```
+  (No `db:push` or `db:studio` for Stage 1 — those require the API token.)
 
 - [ ] **Step 5: Create the base schema (just the example feature for now; auth tables added in Task 5 via `auth generate`).**
   ```typescript
-  // /tmp/quickstart-reference/src/db/schema.ts
+  // /Users/jamescary/dev/quickstart-template/reference/src/db/schema.ts
   import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
   // Example feature placeholder — exists only to verify the schema → migration → D1 pipeline.
@@ -481,7 +483,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 6: Create the Drizzle client.**
   ```typescript
-  // /tmp/quickstart-reference/src/db/client.ts
+  // /Users/jamescary/dev/quickstart-template/reference/src/db/client.ts
   import { drizzle } from "drizzle-orm/d1";
   import * as schema from "./schema";
 
@@ -534,7 +536,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 2: Create the dual-mode auth server module.**
   ```typescript
-  // /tmp/quickstart-reference/src/lib/auth/server.ts
+  // /Users/jamescary/dev/quickstart-template/reference/src/lib/auth/server.ts
   import type { D1Database, KVNamespace, IncomingRequestCfProperties } from "@cloudflare/workers-types";
   import { betterAuth } from "better-auth";
   import { withCloudflare } from "better-auth-cloudflare";
@@ -612,7 +614,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 3: Create the auth client.**
   ```typescript
-  // /tmp/quickstart-reference/src/lib/auth/client.ts
+  // /Users/jamescary/dev/quickstart-template/reference/src/lib/auth/client.ts
   import { createAuthClient } from "better-auth/react";
   import { organizationClient } from "better-auth/client/plugins";
 
@@ -626,32 +628,36 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
   export const { signIn, signOut, signUp, useSession } = authClient;
   ```
 
-- [ ] **Step 4a: Verify the current TanStack Start server-route API.** Before writing the file, query context7:
-  ```
-  Library: /websites/tanstack_start_framework_react
-  Query: "How do I create a catch-all server-side API route that handles GET and POST? Show the exact import and route definition for a file at src/routes/api/auth/$.ts that needs access to the Cloudflare bindings (env)."
-  ```
-  Capture the verified API shape (likely `createServerFileRoute` from `@tanstack/react-start/server` or similar) into `BUILD_NOTES.md` before proceeding.
+- [ ] **Step 4: Mount the auth API as a TanStack Start catch-all route** (API verified via context7 against current TanStack Start docs).
 
-- [ ] **Step 4b: Mount the auth API as a TanStack Start catch-all route.** Using the verified API from Step 4a, create the file. The expected shape (subject to API verification):
+  Create `/Users/jamescary/dev/quickstart-template/reference/src/routes/api/auth/$.ts`:
   ```typescript
-  // /tmp/quickstart-reference/src/routes/api/auth/$.ts
-  import { createServerFileRoute } from "@tanstack/react-start/server";
+  import { createFileRoute } from "@tanstack/react-router";
+  import { env } from "cloudflare:workers";
   import { createAuth, type AuthEnv } from "@/lib/auth/server";
 
-  export const ServerRoute = createServerFileRoute("/api/auth/$").methods({
-    GET: async ({ request, context }) => handle(request, context),
-    POST: async ({ request, context }) => handle(request, context),
+  export const Route = createFileRoute("/api/auth/$")({
+    server: {
+      handlers: {
+        GET: async ({ request }) => handle(request),
+        POST: async ({ request }) => handle(request),
+      },
+    },
   });
 
-  async function handle(request: Request, context: any) {
-    const env = context.cloudflare?.env as AuthEnv;
-    const cf = context.cloudflare?.cf;
-    const auth = createAuth(env, cf, env?.BETTER_AUTH_URL);
+  async function handle(request: Request) {
+    const cf = (request as any).cf;
+    const auth = createAuth(env as unknown as AuthEnv, cf, (env as any).BETTER_AUTH_URL);
     return auth.handler(request);
   }
   ```
-  The principle (regardless of exact API): every request to `/api/auth/*` is passed to `auth.handler(request)` with `env` and `cf` from the Worker context. Adjust the import/wrapper to match what context7 confirmed.
+
+  Key points (each verified):
+  - File path `src/routes/api/auth/$.ts` — the trailing `$` is the wildcard segment.
+  - `createFileRoute` is imported from `@tanstack/react-router` (not `@tanstack/react-start/server` or `createServerFileRoute` — those are stale).
+  - The route object uses `server.handlers` (an object keyed by HTTP method), not `.methods()`.
+  - Bindings come from `import { env } from "cloudflare:workers"` — NOT from a context object on the handler. This is the canonical Cloudflare Workers pattern when using `@cloudflare/vite-plugin` and works in any server-side TanStack Start file.
+  - `request.cf` carries the `IncomingRequestCfProperties` (geo/IP info) when available — used by `better-auth-cloudflare` for IP detection and geolocation tracking.
 
 - [ ] **Step 5: Generate auth schema and merge into Drizzle schema.**
   ```bash
@@ -660,7 +666,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
   Expected: creates `src/db/auth-schema.ts` with Drizzle table definitions for `users`, `sessions`, `accounts`, `verifications`, `organizations`, `members`, `invitations` (the org plugin contributes the last three).
 
 - [ ] **Step 6: Re-export auth tables from the main schema.**
-  Append to `/tmp/quickstart-reference/src/db/schema.ts`:
+  Append to `/Users/jamescary/dev/quickstart-template/reference/src/db/schema.ts`:
   ```typescript
   export * from "./auth-schema";
   ```
@@ -708,7 +714,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 2: Theme toggle component.**
   ```tsx
-  // /tmp/quickstart-reference/src/components/theme-toggle.tsx
+  // /Users/jamescary/dev/quickstart-template/reference/src/components/theme-toggle.tsx
   import { Moon, Sun } from "lucide-react";
   import { useTheme } from "next-themes";
   import { Button } from "@/components/ui/button";
@@ -742,7 +748,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 4: Login page.**
   ```tsx
-  // /tmp/quickstart-reference/src/routes/login.tsx
+  // /Users/jamescary/dev/quickstart-template/reference/src/routes/login.tsx
   import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
   import { useState } from "react";
   import { signIn } from "@/lib/auth/client";
@@ -805,7 +811,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 6: OAuth buttons component.**
   ```tsx
-  // /tmp/quickstart-reference/src/components/auth/oauth-buttons.tsx
+  // /Users/jamescary/dev/quickstart-template/reference/src/components/auth/oauth-buttons.tsx
   import { signIn } from "@/lib/auth/client";
   import { Button } from "@/components/ui/button";
 
@@ -825,7 +831,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 7: Dashboard layout (auth-gated).**
   ```tsx
-  // /tmp/quickstart-reference/src/routes/dashboard/route.tsx
+  // /Users/jamescary/dev/quickstart-template/reference/src/routes/dashboard/route.tsx
   import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
   import { ThemeToggle } from "@/components/theme-toggle";
   import { authClient } from "@/lib/auth/client";
@@ -853,7 +859,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 8: Dashboard index.**
   ```tsx
-  // /tmp/quickstart-reference/src/routes/dashboard/index.tsx
+  // /Users/jamescary/dev/quickstart-template/reference/src/routes/dashboard/index.tsx
   import { createFileRoute } from "@tanstack/react-router";
   import { useSession } from "@/lib/auth/client";
 
@@ -923,7 +929,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 1: Org switcher component.**
   ```tsx
-  // /tmp/quickstart-reference/src/components/org-switcher.tsx
+  // /Users/jamescary/dev/quickstart-template/reference/src/components/org-switcher.tsx
   import { authClient } from "@/lib/auth/client";
   import {
     DropdownMenu,
@@ -970,7 +976,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 3: Org index page (members list).**
   ```tsx
-  // /tmp/quickstart-reference/src/routes/dashboard/org/index.tsx
+  // /Users/jamescary/dev/quickstart-template/reference/src/routes/dashboard/org/index.tsx
   import { createFileRoute, Link } from "@tanstack/react-router";
   import { authClient } from "@/lib/auth/client";
 
@@ -997,7 +1003,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 4: Invite page.**
   ```tsx
-  // /tmp/quickstart-reference/src/routes/dashboard/org/invite.tsx
+  // /Users/jamescary/dev/quickstart-template/reference/src/routes/dashboard/org/invite.tsx
   import { createFileRoute, useNavigate } from "@tanstack/react-router";
   import { useState } from "react";
   import { authClient } from "@/lib/auth/client";
@@ -1055,7 +1061,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 3: Email module.**
   ```typescript
-  // /tmp/quickstart-reference/src/server/email.ts
+  // /Users/jamescary/dev/quickstart-template/reference/src/server/email.ts
   import { Resend } from "resend";
 
   export interface EmailEnv {
@@ -1125,7 +1131,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 1: Create the Durable Object class.**
   ```typescript
-  // /tmp/quickstart-reference/src/server/presence-do.ts
+  // /Users/jamescary/dev/quickstart-template/reference/src/server/presence-do.ts
   import { DurableObject } from "cloudflare:workers";
 
   interface Member { id: string; name: string; lastSeen: number; }
@@ -1190,7 +1196,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 3: Export the DO from the Worker entry.** TanStack Start's Cloudflare adapter expects DOs to be exported from the server entry. Check `.output/server/index.mjs` after build to confirm where to add the export. If the build doesn't auto-export, add this to `vite.config.ts`'s build config or create `src/server/worker.ts`:
   ```typescript
-  // /tmp/quickstart-reference/src/server/worker.ts
+  // /Users/jamescary/dev/quickstart-template/reference/src/server/worker.ts
   export { PresenceDO } from "./presence-do";
   // re-export the TanStack Start handler
   export { default } from "../../.output/server/index.mjs";
@@ -1201,7 +1207,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 4: API route to forward to the DO.** Use the same TanStack Start server-route API verified in Task 5 Step 4a:
   ```typescript
-  // /tmp/quickstart-reference/src/routes/api/presence/$.ts
+  // /Users/jamescary/dev/quickstart-template/reference/src/routes/api/presence/$.ts
   import { createServerFileRoute } from "@tanstack/react-start/server";
 
   export const ServerRoute = createServerFileRoute("/api/presence/$").methods({
@@ -1216,7 +1222,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 5: Presence widget on dashboard.**
   ```tsx
-  // /tmp/quickstart-reference/src/components/presence-widget.tsx
+  // /Users/jamescary/dev/quickstart-template/reference/src/components/presence-widget.tsx
   import { useEffect, useState } from "react";
   import { useSession } from "@/lib/auth/client";
 
@@ -1282,7 +1288,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 2: Create `vitest.config.ts`.**
   ```typescript
-  // /tmp/quickstart-reference/vitest.config.ts
+  // /Users/jamescary/dev/quickstart-template/reference/vitest.config.ts
   import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
 
   export default defineWorkersConfig({
@@ -1313,7 +1319,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 5: Test 1 — KV smoke (proves bindings wire up correctly).**
   ```typescript
-  // /tmp/quickstart-reference/tests/notes.test.ts
+  // /Users/jamescary/dev/quickstart-template/reference/tests/notes.test.ts
   import { describe, it, expect } from "vitest";
   import { env } from "cloudflare:workers";
 
@@ -1329,7 +1335,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 6: Test 2 — auth signup creates a user row in D1.**
   ```typescript
-  // /tmp/quickstart-reference/tests/auth.test.ts
+  // /Users/jamescary/dev/quickstart-template/reference/tests/auth.test.ts
   import { describe, it, expect, beforeAll } from "vitest";
   import { env } from "cloudflare:workers";
   import { createAuth } from "../src/lib/auth/server";
@@ -1356,7 +1362,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 7: Test 3 — Durable Object presence.**
   ```typescript
-  // /tmp/quickstart-reference/tests/presence.test.ts
+  // /Users/jamescary/dev/quickstart-template/reference/tests/presence.test.ts
   import { describe, it, expect } from "vitest";
   import { env } from "cloudflare:workers";
   import { runInDurableObject } from "cloudflare:test";
@@ -1399,7 +1405,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 1: Replace the default landing page.**
   ```tsx
-  // /tmp/quickstart-reference/src/routes/index.tsx
+  // /Users/jamescary/dev/quickstart-template/reference/src/routes/index.tsx
   import { createFileRoute, Link } from "@tanstack/react-router";
   import { Button } from "@/components/ui/button";
   import { ThemeToggle } from "@/components/theme-toggle";
@@ -1521,7 +1527,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
 
 - [ ] **Step 1: Re-read `BUILD_NOTES.md`** end-to-end. Confirm every task has an entry. Resolve any "TODO" or "??" markers with the actual answer.
 
-- [ ] **Step 2: Add a "Files inventory" section** at the end listing every file created in `/tmp/quickstart-reference/`, grouped by purpose:
+- [ ] **Step 2: Add a "Files inventory" section** at the end listing every file created in `/Users/jamescary/dev/quickstart-template/reference/`, grouped by purpose:
   ```markdown
   ## Files inventory
 
@@ -1593,7 +1599,7 @@ Both should already be present as devDependencies. If they are, skip Step 1 and 
   ```
 
 - [ ] **Step 4: Print Stage 1 completion summary.** State (in conversation, not in a file):
-  - Reference app working at `/tmp/quickstart-reference/` ✓
+  - Reference app working at `/Users/jamescary/dev/quickstart-template/reference/` ✓
   - Deployed at `https://...` ✓
   - All features verified: auth, OAuth, org plugin, Resend email, presence DO, vitest ✓
   - `BUILD_NOTES.md` ready for Stage 2 handoff ✓
@@ -1613,7 +1619,7 @@ If any criterion fails, fix before moving to Stage 2.
 
 ## What Stage 2 will need from this output
 
-- The working directory `/tmp/quickstart-reference/` (will be copied to `/Users/jamescary/dev/quickstart-template/` and templatized).
+- The working directory `/Users/jamescary/dev/quickstart-template/reference/` (will be copied to `/Users/jamescary/dev/quickstart-template/` and templatized).
 - `BUILD_NOTES.md` — input to Stage 2 spec for `manifest.json` and conditional regions.
 - Verified callback URL templates and provider-console URLs (input to `credentials.md` in Stage 3).
 - The vitest migration-application recipe (input to the skill's vitest setup).
