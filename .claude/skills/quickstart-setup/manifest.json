@@ -1,0 +1,127 @@
+{
+  "$schema": "internal://quickstart-setup-manifest-v1",
+  "toggles": {
+    "resend": {
+      "description": "Resend transactional email — when off, falls back to dev console logger.",
+      "delete": [
+        "src/server/email.ts"
+      ],
+      "strip": [
+        { "file": "src/lib/auth/server.ts", "tag": "resend" },
+        { "file": ".dev.vars.example", "tag": "resend" }
+      ],
+      "edit_json": [
+        { "file": "package.json", "op": "remove_key", "path": ["dependencies", "resend"] }
+      ]
+    },
+    "org": {
+      "description": "better-auth organization plugin — orgs, members, invitations.",
+      "delete": [
+        "src/routes/dashboard/org/index.tsx",
+        "src/routes/dashboard/org/invite.tsx",
+        "src/routes/dashboard/org",
+        "src/components/org-switcher.tsx"
+      ],
+      "strip": [
+        { "file": "src/lib/auth/server.ts", "tag": "org" },
+        { "file": "src/lib/auth/client.ts", "tag": "org" },
+        { "file": "src/routes/dashboard/route.tsx", "tag": "org" },
+        { "file": "tests/auth.test.ts", "tag": "org" }
+      ],
+      "edit_json": []
+    },
+    "oauth.github": {
+      "description": "GitHub OAuth provider.",
+      "delete": [],
+      "strip": [
+        { "file": "src/lib/auth/server.ts", "tag": "oauth.github" },
+        { "file": "src/components/auth/oauth-buttons.tsx", "tag": "oauth.github" },
+        { "file": ".dev.vars.example", "tag": "oauth.github" }
+      ],
+      "edit_json": []
+    },
+    "oauth.google": {
+      "description": "Google OAuth provider.",
+      "delete": [],
+      "strip": [
+        { "file": "src/lib/auth/server.ts", "tag": "oauth.google" },
+        { "file": "src/components/auth/oauth-buttons.tsx", "tag": "oauth.google" },
+        { "file": ".dev.vars.example", "tag": "oauth.google" }
+      ],
+      "edit_json": []
+    },
+    "do": {
+      "description": "Example Durable Object (real-time presence widget).",
+      "delete": [
+        "src/server/presence-do.ts",
+        "src/components/presence-widget.tsx",
+        "src/routes/api/presence/$.ts",
+        "src/routes/api/presence",
+        "tests/presence.test.ts"
+      ],
+      "strip": [
+        { "file": "src/server.ts", "tag": "do" },
+        { "file": "src/routes/dashboard/index.tsx", "tag": "do" },
+        { "file": "wrangler.jsonc", "tag": "do" }
+      ],
+      "edit_json": [],
+      "replace_file": [
+        {
+          "file": "tests/worker-entry.ts",
+          "content": "export default { fetch() { return new Response('test worker'); } };\n"
+        }
+      ]
+    },
+    "vitest": {
+      "description": "Vitest + @cloudflare/vitest-pool-workers.",
+      "delete": [
+        "tests/auth.test.ts",
+        "tests/kv.test.ts",
+        "tests/presence.test.ts",
+        "tests/setup.ts",
+        "tests/worker-entry.ts",
+        "tests",
+        "vitest.config.ts"
+      ],
+      "strip": [
+        { "file": "tsconfig.json", "tag": "vitest" }
+      ],
+      "edit_json": [
+        { "file": "package.json", "op": "remove_key", "path": ["scripts", "test"] },
+        { "file": "package.json", "op": "remove_key", "path": ["scripts", "test:watch"] },
+        { "file": "package.json", "op": "remove_key", "path": ["devDependencies", "@cloudflare/vitest-pool-workers"] },
+        { "file": "package.json", "op": "remove_key", "path": ["devDependencies", "@testing-library/dom"] },
+        { "file": "package.json", "op": "remove_key", "path": ["devDependencies", "@testing-library/react"] },
+        { "file": "package.json", "op": "remove_key", "path": ["devDependencies", "jsdom"] },
+        { "file": "package.json", "op": "remove_key", "path": ["devDependencies", "vitest"] }
+      ]
+    }
+  },
+  "post_subtraction_combinatorial": {
+    "no_oauth_providers": {
+      "description": "When BOTH oauth.github AND oauth.google are off, the OAuthButtons component renders empty. Delete it and clean up its callers.",
+      "condition": "!toggles['oauth.github'] && !toggles['oauth.google']",
+      "delete": [
+        "src/components/auth/oauth-buttons.tsx"
+      ],
+      "regex_strip": [
+        {
+          "file": "src/routes/login.tsx",
+          "patterns": [
+            "^\\s*import \\{ OAuthButtons \\} from \"@/components/auth/oauth-buttons\";\\s*$",
+            "^\\s*<OAuthButtons />\\s*$",
+            "^\\s*<div className=\"my-4 text-center text-xs text-muted-foreground\">or</div>\\s*$"
+          ]
+        },
+        {
+          "file": "src/routes/signup.tsx",
+          "patterns": [
+            "^\\s*import \\{ OAuthButtons \\} from \"@/components/auth/oauth-buttons\";\\s*$",
+            "^\\s*<OAuthButtons />\\s*$",
+            "^\\s*<div className=\"my-4 text-center text-xs text-muted-foreground\">or</div>\\s*$"
+          ]
+        }
+      ]
+    }
+  }
+}
