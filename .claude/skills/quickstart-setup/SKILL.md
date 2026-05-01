@@ -357,9 +357,95 @@ git add -A
 git commit -m "chore(quickstart-setup): regenerate types + deploy-secrets.sh + verify build"
 ```
 
-## Self-removal
+### Apply Step 8 — Initialize fresh git history (or commit)
 
-After all Apply substeps succeed and the final commit lands, the skill removes itself. This is the LAST step:
+The bootstrap (`install.sh` or manual clone) already runs `git init` + an initial commit. Each Apply step has been creating commits on top of that. Step 8 is a no-op IF that bootstrap ran. But if the user ran the skill in an existing repo without bootstrap (e.g., they `git clone`d the template manually instead of using `install.sh`), the `.git` history reflects the template repo, not the user's project. Detect:
+
+```bash
+# Detect: is the current HEAD a "chore: initial commit from quickstart-template" commit
+# (the bootstrap-flow signature), or is it the template repo's history (multiple commits)?
+COMMIT_COUNT=$(git rev-list --count HEAD)
+FIRST_MSG=$(git log --reverse --pretty=%s | head -1)
+```
+
+- If `COMMIT_COUNT == 1` AND the message starts with `chore: initial commit from quickstart-template` ⇒ bootstrap was used; do nothing.
+- Otherwise ⇒ the user is in the template's own history. Re-init:
+  ```bash
+  rm -rf .git
+  git init -q
+  git add -A
+  git commit -q -m "chore: initial commit from quickstart-template"
+  ```
+  Then re-apply ALL the per-step commits from this run as squashed work (i.e., the previous Apply step commits are gone — that's fine, they were against the wrong history). Add a single follow-up commit summarizing the setup:
+  ```bash
+  git commit --allow-empty -m "chore(quickstart-setup): apply customizations"
+  ```
+
+(In practice, this re-init path is rare — almost all users come through `install.sh`. Document it but don't optimize for it.)
+
+### Apply Step 9 — GitHub repo + Workers Git Integration (conditional)
+
+Only if `WORKERS_GIT_INTEGRATION == true`:
+
+```bash
+gh --version 2>/dev/null
+```
+
+- **`gh` not installed or not authenticated** ⇒ print:
+  > `gh` CLI is not available. Skipping automatic GitHub repo creation.
+  > To set up Workers Git Integration manually:
+  >   1. Create a private GitHub repo at https://github.com/new (name: `<PROJECT_SLUG>`)
+  >   2. Push: `git remote add origin git@github.com:<your-user>/<PROJECT_SLUG>.git && git push -u origin main`
+  >   3. In Cloudflare Dashboard → Workers & Pages → `<PROJECT_SLUG>` → Settings → Builds → Connect repository
+  Then continue.
+
+- **`gh` is available** ⇒
+  ```bash
+  gh repo create <PROJECT_SLUG> --private --source=. --push
+  ```
+  After success, print:
+  > GitHub repo created: https://github.com/<your-user>/<PROJECT_SLUG>
+  > To finish Workers Git Integration:
+  >   1. Open https://dash.cloudflare.com/<account-id>/workers/services/view/<PROJECT_SLUG>/production/settings
+  >   2. Under "Builds", click "Connect repository"
+  >   3. Authorize Cloudflare's GitHub App and select `<PROJECT_SLUG>`
+  > After this, every push to `main` auto-deploys.
+
+(There is no fully-automated Workers Git Integration API as of 2026-05-01 — the dashboard step is mandatory. Document this clearly.)
+
+### Apply Step 10 — Install superpowers plugin
+
+Try the programmatic install path first:
+
+```bash
+# Add "superpowers" to .claude/settings.json's enabledPlugins array.
+mkdir -p .claude
+pnpm exec node --input-type=module -e '
+import fs from "node:fs";
+const p = ".claude/settings.json";
+const cfg = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : {};
+cfg.enabledPlugins = Array.from(new Set([...(cfg.enabledPlugins ?? []), "superpowers"]));
+fs.writeFileSync(p, JSON.stringify(cfg, null, 2));
+'
+```
+
+If that succeeds, print:
+> superpowers plugin enabled in .claude/settings.json. Restart Claude Code (or your agent) to load it.
+
+If it fails (e.g., the project's settings.json schema rejects the field), fall back:
+> Could not auto-install superpowers. Run: `/plugin install superpowers`
+
+(See "Stage 3 implications" in `STATUS.md` — the spec acknowledges programmatic install reliability varies; the print fallback is the never-silently-broken path.)
+
+Commit:
+```bash
+git add -A
+git commit -m "chore(quickstart-setup): enable superpowers plugin"
+```
+
+### Apply Step 11 — Self-remove
+
+This is the LAST step. Remove the skill itself and the marker:
 
 ```bash
 rm -f .quickstart-template
@@ -368,5 +454,22 @@ git add -A
 git commit -m "chore: complete quickstart-setup; remove setup skill"
 ```
 
-Print:
-> Done. Run `pnpm dev` to start. Run `scripts/deploy-secrets.sh && wrangler deploy` when you're ready to ship.
+Print the closing message:
+
+> ## Setup complete
+>
+> Project `<PROJECT_NAME>` is ready at `<project-root>`.
+>
+> Next steps:
+>   1. Start dev: `pnpm dev` → http://localhost:3000
+>   2. Deploy: read `README.md` § Deploy. The two-phase first deploy is:
+>        ```
+>        wrangler deploy            # captures the workers.dev URL
+>        ./scripts/deploy-secrets.sh
+>        echo "https://<your-worker>.workers.dev" | wrangler secret put BETTER_AUTH_URL
+>        VITE_BETTER_AUTH_URL="https://<your-worker>.workers.dev" pnpm build
+>        wrangler deploy
+>        ```
+>   3. The setup skill has self-removed. To re-run any phase, `git revert` the "complete quickstart-setup" commit.
+>
+> superpowers is enabled. Try `/brainstorm` or `/init`.
