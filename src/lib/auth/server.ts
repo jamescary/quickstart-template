@@ -9,7 +9,9 @@ import { organization } from "better-auth/plugins";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "@/db/schema";
+// #region quickstart:if=resend
 import { createEmailer } from "@/server/email";
+// #endregion
 
 export interface AuthEnv {
   DB: D1Database;
@@ -20,8 +22,10 @@ export interface AuthEnv {
   GITHUB_CLIENT_SECRET?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  // #region quickstart:if=resend
   RESEND_API_KEY?: string;
   RESEND_FROM_EMAIL?: string;
+  // #endregion
 }
 
 export function createAuth(
@@ -65,6 +69,7 @@ export function createAuth(
           organization({
             organizationHooks: {
               afterCreateInvitation: async ({ invitation, organization, inviter }) => {
+                // #region quickstart:if=resend
                 if (!env) return; // CLI/no-runtime-env path; nothing to send
                 const emailer = createEmailer(env);
                 const acceptUrl = `${env.BETTER_AUTH_URL}/accept-invitation/${invitation.id}`;
@@ -80,6 +85,7 @@ export function createAuth(
                     </div>
                   `,
                 });
+                // #endregion
               },
             },
           }),
