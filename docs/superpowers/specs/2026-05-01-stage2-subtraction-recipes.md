@@ -30,3 +30,30 @@
 
 **Notes:**
 - The plan originally specified wrapping only the *body* of `afterCreateInvitation` in the `resend` region. That left an empty arrow function with destructured params, which fails `noUnusedParameters: true` (TS6198). The revised marker placement (committed in `a464f6c`) wraps the **entire property** so the strip removes the whole hook entry; better-auth treats a missing hook as a no-op, which is the desired behavior.
+- The `createEmailer` import is wrapped in **nested** regions (outer `org`, inner `resend`). Either toggle off strips it. See Task 8 notes for why this is required.
+
+---
+
+## Toggle: `org`
+
+**Validated:** 2026-05-01 against template at commit `41082dd`.
+
+**Whole-file/dir deletions:**
+- `src/routes/dashboard/org/` (entire directory: `index.tsx`, `invite.tsx`)
+- `src/components/org-switcher.tsx`
+
+**Region strips (file → tag):**
+- `src/lib/auth/server.ts`: `org` (3 regions: `organization` import, full `organization({...})` plugin entry, plus the *outer* `org` region wrapping the nested `org→resend` `createEmailer` import)
+- `src/lib/auth/client.ts`: `org` (2 regions: `organizationClient` import, plugin entry)
+- `src/routes/dashboard/route.tsx`: `org` (2 regions: `OrgSwitcher` import, JSX mount — JSX variant `{/* #region */}`)
+- `tests/auth.test.ts`: `org` (1 region: `organizations`/`members`/`invitations` table-name array entries)
+
+**JSON edits:** none. (The `better-auth/plugins` import path stays available via the package — `@better-auth/drizzle-adapter` is still needed for the base auth tables.)
+
+**Schema regen (Stage 3 only):** the org tables persist in `src/db/auth-schema.ts` after Stage 2 subtraction. Stage 3's skill regenerates this file via `pnpm exec @better-auth/cli generate` *after* stripping the `organization()` plugin from `auth.ts`. The CLI emits only the plugins still present in `createAuth`. **For Stage 2 validation purposes, leaving the org tables in `auth-schema.ts` is acceptable** — they compile fine (no runtime references after subtraction) and tests still query them (and they exist in the test D1 because migrations include them). Tests' `organizations`/`members`/`invitations` table assertions are stripped by the `org` region in `auth.test.ts`, so the test suite no longer attempts to query them.
+
+**Verification (post-subtraction):** `pnpm typecheck && pnpm build && pnpm test` all pass with 6 tests passing (auth: 2, kv: 2, presence: 2).
+
+**Notes:**
+- Stripping `org` outer regions transitively removes any nested `resend` regions (e.g., the `createEmailer` import). This is the documented "outer-first" stripping behavior.
+- The plan also says "wrap the entire `organization({...})` call but **not** the surrounding `plugins: []` declaration — the array stays even if empty." That's preserved here; better-auth accepts `plugins: []`.
