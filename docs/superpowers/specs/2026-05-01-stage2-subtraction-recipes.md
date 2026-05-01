@@ -102,3 +102,29 @@ When neither `oauth.github` nor `oauth.google` is selected, the result of stripp
 - Strip the `OAuthButtons` import + `<OAuthButtons />` JSX (and the `<div className="my-4 text-center text-xs text-muted-foreground">or</div>` divider) from `login.tsx` and `signup.tsx`.
 
 This combinatorial cleanup is **not** encoded as Stage 2 region markers (would require multi-toggle conditional logic). The skill performs it as a post-subtraction pass when both `oauth.*` toggles resolve false.
+
+---
+
+## Toggle: `do`
+
+**Validated:** 2026-05-01 against template at commit `0c122d3`.
+
+**Whole-file deletions:**
+- `src/server/presence-do.ts`
+- `src/components/presence-widget.tsx`
+- `src/routes/api/presence/$.ts` (and the empty `src/routes/api/presence/` directory)
+- `tests/presence.test.ts`
+
+**File replacements (skill rewrites):**
+- `tests/worker-entry.ts`: rewrite to a minimal stub (drop the `export { PresenceDO }` line; keep the default `fetch`-only export). Stage 3's manifest entry should be a `replace` op, not a delete — vitest.config.ts's `cloudflareTest({ main: "./tests/worker-entry.ts" })` still references this path.
+
+**Region strips (file → tag):**
+- `src/server.ts`: `do` (1 region: PresenceDO re-export)
+- `src/routes/dashboard/index.tsx`: `do` (2 regions: import, JSX mount — JSX variant `{/* #region */}`)
+- `wrangler.jsonc`: `do` (1 region: `durable_objects` + `migrations` blocks)
+
+**JSON edits:** none. (DO config is in `wrangler.jsonc` which uses `// #region` comments — JSONC supports them.)
+
+**Worker type regeneration required:** Stage 3 must run `pnpm exec wrangler types` after stripping `wrangler.jsonc` regions, otherwise `worker-configuration.d.ts` retains stale `PRESENCE` binding type. (For Stage 2 validation, the binding's absence in the live wrangler.jsonc was sufficient — tests pass without regenerating the types file because the existing types file declares `PRESENCE` but no test references it after `tests/presence.test.ts` is deleted.)
+
+**Verification:** `pnpm typecheck && pnpm build && pnpm test` pass with 4 tests (auth: 2, kv: 2).
