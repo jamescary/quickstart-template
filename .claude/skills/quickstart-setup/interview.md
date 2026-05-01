@@ -121,7 +121,11 @@ About to apply the following changes to <project-root>:
 Proceed? (yes / no)
 ```
 
-- Accept only literal `yes` (case-insensitive). Anything else aborts: print "Aborted. No changes have been written to source files. Cloudflare resources <D1_ID> and <KV_ID> were created — delete them with `wrangler d1 delete <slug>-db` and `wrangler kv namespace delete --namespace-id <KV_ID>` if you don't want to keep them." and exit.
+- Accept only literal `yes` (case-insensitive). Anything else aborts: print
+
+  > Aborted. Phase 4 already mutated `wrangler.jsonc` (slug substituted, D1 ID and KV ID written) and Phase 5 may have written `.dev.vars`. To restore the template files: `git checkout -- wrangler.jsonc` and `rm -f .dev.vars`. Cloudflare resources `<D1_ID>` and `<KV_ID>` were created — delete them with `wrangler d1 delete <slug>-db` and `wrangler kv namespace delete --namespace-id <KV_ID>` if you don't want to keep them.
+
+  Then exit.
 - On `yes`, proceed to Phase 7.
 
 ---

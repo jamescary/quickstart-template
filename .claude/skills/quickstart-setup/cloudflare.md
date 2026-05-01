@@ -10,6 +10,27 @@ wrangler --version
 
 Expected: a version string. If `wrangler` is not installed, abort with: "Wrangler is required. Install with `pnpm add -D wrangler` or `npm i -g wrangler` and re-run."
 
+## Step 0 — Pre-substitute the worker slug in `wrangler.jsonc`
+
+**Why this step exists:** Wrangler ≥4.x parses and validates the local `wrangler.jsonc` for *every* command, including global ones like `wrangler whoami`, `wrangler d1 list`, and `wrangler kv namespace list`. The template ships with `name: "__PROJECT_SLUG__"` and `database_name: "__PROJECT_SLUG__-db"`, both of which fail wrangler's `name` validation (`Expected "name" to be of type string, alphanumeric and lowercase with dashes only`). Until the slug sentinel is replaced, every wrangler command will error before doing anything useful.
+
+The full sentinel substitution lives in Apply Step 2 (after Phase 6 confirmation), but we need a valid slug NOW. We already have the user's chosen `PROJECT_SLUG` from Phase 1 Q2 — substitute just that one sentinel:
+
+```bash
+sed -i '' \
+  -e "s|__PROJECT_SLUG__|<PROJECT_SLUG>|g" \
+  wrangler.jsonc
+```
+
+Verify:
+```bash
+! grep -q '__PROJECT_SLUG__' wrangler.jsonc && echo "slug pre-substituted: OK"
+```
+
+**Idempotency:** Apply Step 2's global sentinel pass will also process `wrangler.jsonc`, but its `__PROJECT_SLUG__` regex won't match anymore (already replaced) — that's a no-op, which is the desired behavior.
+
+**Abort/rollback note:** if the user aborts at Phase 6, `wrangler.jsonc` has been mutated (slug substitution + D1 ID + KV ID writes from Steps 2–3 below). The abort message in `interview.md` § Phase 6 should remind the user they can `git checkout -- wrangler.jsonc` to restore it.
+
 ## Step 1 — Authentication
 
 ```bash
@@ -109,23 +130,19 @@ Verify:
 grep -c '<KV_ID>' wrangler.jsonc | grep -q '^1$' && echo "KV ID written: OK"
 ```
 
-## Step 4 — Initial migration apply (local only)
+## Step 4 — Smoke-test the D1 connection
 
-The skill regenerates `drizzle/migrations/` later (in the Apply phase, after `auth-schema.ts` regeneration). At this Phase 4 stage, just verify wrangler can talk to the new D1:
+The skill regenerates `drizzle/migrations/` later (in the Apply phase, after `auth-schema.ts` regeneration and the feature scaffold). At this Phase 4 stage, just verify wrangler can talk to the new D1:
 
 ```bash
 wrangler d1 execute <PROJECT_SLUG>-db --local --command "SELECT 1 AS ok"
 ```
 
-Expected: `[{ "ok": 1 }]`. If it errors with "wrangler.jsonc validation failed", the sentinel substitution has not yet run — you are in the wrong phase order. Phase 4 runs **before** sentinel substitution but **after** the D1/KV IDs are written (which happened in Steps 2 and 3 above), and `name` in wrangler.jsonc is still `__PROJECT_SLUG__`. Two options:
-1. Defer the migration apply to Apply Step 5 (after sentinel substitution).
-2. Pass `--config /dev/null` and inline the connection string. (Don't do this — it's brittle.)
-
-**Decision: defer.** Move the actual `wrangler d1 migrations apply` call to Apply Step 5, immediately after sentinel substitution makes the worker name valid. Phase 4 only writes IDs into wrangler.jsonc and verifies wrangler can authenticate.
+Expected: `[{ "ok": 1 }]`. (Step 0's slug pre-substitution makes this validation-clean; the actual `wrangler d1 migrations apply` happens in Apply Step 5b after the migration is regenerated.)
 
 ## Step 5 — Worker-types regeneration (DEFERRED to Apply phase)
 
-Same reason: `wrangler types` requires a valid wrangler.jsonc, which means sentinels must be substituted first. Phase 4 leaves `worker-configuration.d.ts` as it was at Stage 2 commit time. The Apply phase regenerates it after substitution + sentinel pass.
+`worker-configuration.d.ts` must reflect the post-subtraction `wrangler.jsonc` (e.g., absence of `PRESENCE` binding when `do` is off). Subtraction runs in Apply Step 1, so the wrangler-types regen runs in Apply Step 7 after subtraction completes.
 
 ## Failure modes
 
