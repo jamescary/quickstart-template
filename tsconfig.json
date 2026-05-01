@@ -10,7 +10,13 @@
       "@/*": ["./src/*"]
     },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client", "@cloudflare/workers-types", "@cloudflare/vitest-pool-workers"],
+    "types": [
+      "vite/client",
+      "@cloudflare/workers-types",
+      // #region quickstart:if=vitest
+      "@cloudflare/vitest-pool-workers"
+      // #endregion
+    ],
 
     /* Bundler mode */
     "moduleResolution": "bundler",
