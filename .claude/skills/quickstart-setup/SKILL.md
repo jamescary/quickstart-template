@@ -52,6 +52,63 @@ Read `credentials.md`. Walk the user through each chosen provider's console; col
 
 Read `interview.md` § Phase 6. Print the summary; require explicit "yes" before Phase 7.
 
+## Subtraction algorithm (used in Apply Step 1)
+
+For each toggle in `manifest.json["toggles"]` whose user-chosen value is **false**, do these ops in this order:
+
+### 1. `delete`
+
+For each path:
+- If it's a file, `rm -f <path>`.
+- If it's a directory, `rmdir <path>` (only succeeds if already empty after the file deletes — manifest `delete` order lists files first, then their parent dir, by design).
+
+### 2. `strip`
+
+For each `{ file, tag }` entry:
+1. `Read` the file.
+2. Detect file kind by extension and choose the matching marker pair (see "Region-marker grep patterns" in the plan / SKILL.md conventions).
+3. Walk the file line-by-line, tracking nesting depth. When you encounter `// #region quickstart:if=<tag>` (or its variant), record the opening line number and increment depth. When you encounter `// #endregion`, decrement depth — if depth returns to zero **and** the matching open was for THIS tag, mark the closed line. After the walk, delete every line in any "this-tag" open/close pair, plus all lines between (inclusive of the markers themselves).
+4. Note: a file may have BOTH `org` and `resend` regions (e.g., `src/lib/auth/server.ts`). Process toggles independently; nested-but-different-tag regions strip outer-first if the outer toggle is off, otherwise the inner is processed in its own pass.
+5. Write the file back.
+
+**JSX positional regions** use `{/* #region */}` markers; a file may contain BOTH plain-`//` regions (in TS code) AND JSX regions (inside the JSX return) — both are processed in the same pass.
+
+### 3. `edit_json`
+
+`package.json` is plain JSON (no comments). Parse with `JSON.parse`, mutate, write back with 2-space indentation:
+
+```bash
+pnpm exec node -e '
+  const fs = require("node:fs");
+  const file = process.argv[1];
+  const segs = JSON.parse(process.argv[2]);  // e.g., ["dependencies","resend"]
+  const obj = JSON.parse(fs.readFileSync(file, "utf8"));
+  let cur = obj;
+  for (let i = 0; i < segs.length - 1; i++) cur = cur[segs[i]];
+  delete cur[segs[segs.length - 1]];
+  fs.writeFileSync(file, JSON.stringify(obj, null, 2) + "\n");
+' <FILE> '["<seg1>","<seg2>"]'
+```
+
+`wrangler.jsonc` and `tsconfig.json` contain comments. The manifest does NOT use `edit_json` for these (their ops are `strip` operations against region markers, which the line-based strip algorithm handles directly). The only post-Stage-2 mutations to `wrangler.jsonc` are the resource-ID overwrites in Phase 4 — those use `sed` against the unique zero-placeholder values (see `cloudflare.md`).
+
+### 4. `replace_file`
+
+Overwrite the file with the supplied `content` string verbatim.
+
+### 5. Combinatorial post-pass
+
+After all per-toggle ops complete, evaluate `manifest.json["post_subtraction_combinatorial"]` entries. Each has a `condition` expressed as a JS-style boolean over `toggles`; evaluate it and, if true, run its `delete` and `regex_strip` ops. `regex_strip` removes whole lines matching any regex pattern in the list (line-anchored).
+
+### 6. Verification
+
+After all ops:
+```bash
+pnpm install     # rebuild lockfile after dep removals
+pnpm exec tsc --noEmit
+```
+If `tsc` fails, the most likely cause is a missed reference. Surface the error verbatim to the user, then halt — do not attempt automated recovery. The phase-by-phase commit boundary means the user can `git revert` to restart.
+
 ## Phase 7 — Apply
 
 Run the Apply phase steps below. **Commit after each step** so a crash is recoverable.
