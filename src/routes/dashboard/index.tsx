@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSession } from "@/lib/auth/client";
+// #region quickstart:if=do
 import { PresenceWidget } from "@/components/presence-widget";
+// #endregion
 
 export const Route = createFileRoute("/dashboard/")({ component: DashboardHome });
 
@@ -13,7 +15,9 @@ function DashboardHome() {
         <h2 className="text-2xl font-bold">Welcome, {session?.user.name}</h2>
         <p className="text-muted-foreground">{session?.user.email}</p>
       </div>
+      {/* #region quickstart:if=do */}
       <PresenceWidget />
+      {/* #endregion */}
     </div>
   );
 }

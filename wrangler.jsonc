@@ -20,6 +20,7 @@
   "kv_namespaces": [
     { "binding": "KV", "id": "5c21b215d76c49038e680801d92f5518" }
   ],
+  // #region quickstart:if=do
   "durable_objects": {
     "bindings": [
       { "name": "PRESENCE", "class_name": "PresenceDO" }
@@ -28,4 +29,5 @@
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["PresenceDO"] }
   ]
+  // #endregion
 }
