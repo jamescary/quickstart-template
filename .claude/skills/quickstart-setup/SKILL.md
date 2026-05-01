@@ -261,6 +261,102 @@ git add src/db/auth-schema.ts
 git commit -m "chore(quickstart-setup): regenerate auth-schema for selected plugins"
 ```
 
+### Apply Step 5 — Drop reference migrations + regenerate
+
+The reference's two migration files (`0000_slippery_millenium_guard.sql` for `notes` and `0001_wild_talos.sql` for auth) reflect Stage 1's schema. After auth-schema regen (Step 4) and the upcoming feature scaffold (Step 6), the schema is different. Drop and regenerate:
+
+```bash
+rm -f drizzle/migrations/*.sql
+rm -rf drizzle/migrations/meta
+```
+
+Note: Step 6 happens BEFORE the regen here. Why? Because the new feature's table belongs in the same first migration as auth-schema. Sequencing:
+
+1. Step 4: regen `auth-schema.ts` (already done above).
+2. Step 6: scaffold first feature (replaces `notes` in `schema.ts` with `<feature_plural>`).
+3. **Then come back here** and run `pnpm db:generate` so the migration covers everything currently in `schema.ts` + `auth-schema.ts`.
+
+So this Step 5 has two halves separated by Step 6:
+
+**5a. Drop reference migrations** (do now):
+```bash
+rm -f drizzle/migrations/*.sql
+rm -rf drizzle/migrations/meta
+```
+
+**5b. Generate fresh migration** (do AFTER Step 6):
+```bash
+pnpm db:generate
+```
+
+Verify the new migration:
+```bash
+ls drizzle/migrations/
+```
+Expected: one `.sql` file (the freshly generated `0000_<random_name>.sql`).
+
+Apply locally to validate the SQL:
+```bash
+wrangler d1 migrations apply <PROJECT_SLUG>-db --local
+```
+Expected: "✅" — N commands executed successfully.
+
+Commit (combined with Step 6):
+```bash
+git add -A
+git commit -m "chore(quickstart-setup): scaffold first feature + regenerate migrations"
+```
+
+### Apply Step 6 — Scaffold first feature
+
+Read `scaffold-feature.md` and follow its 6 steps. The output is four new (or replaced) files plus a dashboard nav link edit.
+
+After scaffolding, return to Apply Step 5b to generate the migration that covers the new schema.
+
+### Apply Step 7 — Regenerate worker types + write deploy-secrets.sh + final verification
+
+Now that `wrangler.jsonc` is fully valid (real D1 ID, real KV ID, real worker name from sentinel substitution, `do` regions stripped if applicable), regenerate the typed `Env`:
+
+```bash
+pnpm exec wrangler types
+```
+
+Expected: `worker-configuration.d.ts` is rewritten. If `toggles.do == false`, the `PRESENCE: DurableObjectNamespace<...>` field is absent.
+
+Write the deploy-secrets helper (template at `credentials.md` "Production secrets — generated"):
+
+```bash
+mkdir -p scripts
+cat > scripts/deploy-secrets.sh <<'EOF'
+<the contents from credentials.md verbatim>
+EOF
+chmod +x scripts/deploy-secrets.sh
+```
+
+Final at-rest verification:
+
+```bash
+pnpm install                    # rebuild lockfile (subtract step removed deps; install consolidates)
+pnpm exec tsc --noEmit          # full typecheck against the post-substitution tree
+pnpm build                      # vite build — should now succeed because wrangler.jsonc is valid
+```
+
+If `vitest` is on:
+```bash
+pnpm test                       # 6 tests pass (or fewer, if `do`/`org` toggles dropped tests)
+```
+
+If any of the above fail, surface the error and halt. Common failure modes:
+- `pnpm install` fails with "lockfile mismatch" — re-run `pnpm install --no-frozen-lockfile`.
+- `pnpm build` fails with "wrangler.jsonc validation failed: name" — sentinels weren't fully substituted; re-grep and resolve.
+- `pnpm test` fails with "TypeError: Cannot read properties of undefined" inside `tests/auth.test.ts` — likely the `org` strip didn't remove the right region; check `tests/auth.test.ts` for stale `organizations` / `invitations` references.
+
+Commit:
+```bash
+git add -A
+git commit -m "chore(quickstart-setup): regenerate types + deploy-secrets.sh + verify build"
+```
+
 ## Self-removal
 
 After all Apply substeps succeed and the final commit lands, the skill removes itself. This is the LAST step:
