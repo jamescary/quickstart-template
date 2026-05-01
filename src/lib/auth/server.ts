@@ -11,8 +11,10 @@ import { organization } from "better-auth/plugins";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "@/db/schema";
+// #region quickstart:if=org
 // #region quickstart:if=resend
 import { createEmailer } from "@/server/email";
+// #endregion
 // #endregion
 
 export interface AuthEnv {
