@@ -1,5 +1,6 @@
 {
-  "name": "quickstart-reference",
+  "name": "__PROJECT_SLUG__",
+  "description": "__PROJECT_DESCRIPTION__",
   "private": true,
   "type": "module",
   "imports": {
@@ -14,8 +15,8 @@
     "typecheck": "tsc --noEmit",
     "deploy": "pnpm run build && wrangler deploy",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply quickstart-reference-db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply quickstart-reference-db --remote"
+    "db:migrate:local": "wrangler d1 migrations apply __PROJECT_SLUG__-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply __PROJECT_SLUG__-db --remote"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.6.9",

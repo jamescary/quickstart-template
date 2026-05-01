@@ -34,7 +34,7 @@ function DashboardLayout() {
     <div className="min-h-screen">
       <header className="flex items-center justify-between border-b p-4">
         <Link to="/dashboard" className="font-semibold">
-          Quickstart Reference
+          __PROJECT_NAME__
         </Link>
         <div className="flex items-center gap-2">
           {/* #region quickstart:if=org */}

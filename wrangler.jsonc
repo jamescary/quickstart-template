@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "quickstart-reference",
+  "name": "__PROJECT_SLUG__",
   "compatibility_date": "2025-09-23",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
@@ -12,13 +12,13 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "quickstart-reference-db",
-      "database_id": "a5f78b53-2e29-4f68-ab1b-262df76ef691",
+      "database_name": "__PROJECT_SLUG__-db",
+      "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "drizzle/migrations"
     }
   ],
   "kv_namespaces": [
-    { "binding": "KV", "id": "5c21b215d76c49038e680801d92f5518" }
+    { "binding": "KV", "id": "00000000000000000000000000000000" }
   ],
   // #region quickstart:if=do
   "durable_objects": {

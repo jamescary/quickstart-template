@@ -93,7 +93,7 @@ export function createAuth(
                     <div style="font-family: system-ui, sans-serif; line-height: 1.5;">
                       <h2>You're invited to ${organization.name}</h2>
                       <p>${inviter.name ?? "A team member"} invited you to join <strong>${organization.name}</strong>.</p>
-                      <p><a href="${acceptUrl}" style="display: inline-block; padding: 10px 16px; background: #0F172A; color: white; text-decoration: none; border-radius: 6px;">Accept invitation</a></p>
+                      <p><a href="${acceptUrl}" style="display: inline-block; padding: 10px 16px; background: __BRAND_COLOR__; color: white; text-decoration: none; border-radius: 6px;">Accept invitation</a></p>
                       <p style="color: #666; font-size: 14px;">If the button doesn't work, copy this link: ${acceptUrl}</p>
                     </div>
                   `,
