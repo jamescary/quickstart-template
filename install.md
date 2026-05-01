@@ -22,7 +22,7 @@ node --version    # require >= 20
 
 2. **Clone the template.**
    ```bash
-   git clone --depth=1 https://github.com/jamescry/quickstart-template.git <TARGET>
+   git clone --depth=1 https://github.com/jamescary/quickstart-template.git <TARGET>
    ```
 
 3. **Enter the cloned directory.**

@@ -11,7 +11,7 @@ This is the working directory for the **quickstart-template** project: a Cloudfl
 | **Brainstorm + spec** | ✅ Done | `docs/superpowers/specs/2026-04-30-quickstart-template-design.md` |
 | **Stage 1 — reference app build** | ✅ Done (2026-05-01) | `reference/` (44 commits) deployed at `https://quickstart-reference.eliteeggnog.workers.dev`. Per-task log + Files Inventory at `reference/BUILD_NOTES.md`. Plan: `docs/superpowers/plans/2026-04-30-stage1-reference-app.md`. |
 | **Stage 2 — templatize** | ✅ Done (2026-05-01) | Reference copied to repo root with region markers + sentinels. Subtraction validated by hand for all 5 toggles. Subtraction recipes captured at `docs/superpowers/specs/2026-05-01-stage2-subtraction-recipes.md`. Plan: `docs/superpowers/plans/2026-05-01-stage2-templatize.md`. Bootstrap files (`install.sh`, `install.md`, `.quickstart-template`, user-facing `README.md`) added. Template at-rest typechecks; does not build or run until Stage 3 substitutes sentinels and provisions IDs. |
-| **Stage 3 — build setup skill** | ✅ Done (2026-05-01) | `.claude/skills/quickstart-setup/` — `SKILL.md`, `manifest.json`, `interview.md`, `cloudflare.md`, `credentials.md`, `scaffold-feature.md`, `TEMPLATE_URL`. Plan: `docs/superpowers/plans/2026-05-01-stage3-build-skill.md`. E2E tests (Tasks 13–15) require interactive Claude Code sessions in scratch dirs; instructions captured in `STAGE3_NOTES.md` for the user to run, then folded back here. `__GH_USER__` substituted to `jamescry`. Template ready to publish. |
+| **Stage 3 — build setup skill** | ✅ Done (2026-05-01) | `.claude/skills/quickstart-setup/` — `SKILL.md`, `manifest.json`, `interview.md`, `cloudflare.md`, `credentials.md`, `scaffold-feature.md`, `TEMPLATE_URL`. Plan: `docs/superpowers/plans/2026-05-01-stage3-build-skill.md`. E2E tests (Tasks 13–15) require interactive Claude Code sessions in scratch dirs; instructions captured in `STAGE3_NOTES.md` for the user to run, then folded back here. `__GH_USER__` substituted to `jamescary`. Template ready to publish. |
 
 ## Where things live
 
@@ -45,12 +45,13 @@ This is the working directory for the **quickstart-template** project: a Cloudfl
 
 ## To pick up where we left off
 
-Stages 1, 2, and 3 are complete. The template is **ready to publish**: push this repo to `https://github.com/jamescry/quickstart-template` and `install.sh` / `TEMPLATE_URL` will resolve. Pending validation: the three E2E test combinations described in `STAGE3_NOTES.md` need to be run by the user in fresh Claude Code sessions; results fold back into this file.
+Stages 1, 2, and 3 are complete. E2E test 1 (all-features-on) passed end-to-end; tests 2 and 3 were skipped (see "Stage 3 E2E findings" above for what's unvalidated). The template is **ready to publish**.
 
 Optional next steps:
-- Run E2E tests per `STAGE3_NOTES.md` (3 fresh sessions; ~10–30 minutes each).
 - Tag a release: `git tag -a v0.1.0 -m "First publishable release of quickstart-template"`.
-- Push to GitHub and verify `install.sh` works against the public repo.
+- Create `github.com/jamescary/quickstart-template` and `git push -u origin main` (with `--tags` if you tagged).
+- Smoke-test the public install path: `curl -fsSL https://raw.githubusercontent.com/jamescary/quickstart-template/main/install.sh | bash -s -- smoke-test` and verify it clones + creates the marker.
+- (Optional) run E2E tests 2 and 3 against the published template to close the unvalidated combinatorial / brand-color paths.
 
 ## Stage 1 known limitations (worth knowing for Stage 2/3)
 
@@ -84,13 +85,22 @@ These are the non-obvious ones, all documented in BUILD_NOTES with reasoning:
 - **`__GH_USER__` placeholder in `install.sh` and `install.md`.** Stage 3 (or template publishing step) must replace this with the actual GitHub user/org hosting the template repo.
 - **`tsconfig.json` excludes `reference/` and `vitest.config.ts` `test.include` is scoped to `tests/`.** Both adjustments were necessary because `reference/` (Stage 1's git-ignored archive) sits at the repo root; without them, tooling spans the reference's own deps and tests. These exclusions are part of the template's permanent shape.
 
+## Stage 3 E2E findings (2026-05-01)
+
+- **Test 1 — all-features-on (`e2e-all-on`):** ✅ PASS. The full lifecycle works against the most complex toggle combination. Verifications all green: skill self-removed, sentinels fully substituted, `pnpm exec tsc --noEmit` passes, `pnpm build` produces both client + SSR bundles (2051 modules transformed; `dist/server/index.js` ~521 kB), `pnpm test` runs 6/6 tests across `tests/auth.test.ts`, `tests/kv.test.ts`, `tests/presence.test.ts`. Run was at `/private/tmp/quickstart-e2e-allon-1777662208`.
+- **Test 2 — minimal toggles (`e2e-minimal`):** ⏭️ SKIPPED. Risk: the both-OAuth-providers-off combinatorial cleanup (delete `oauth-buttons.tsx` + strip references from `login.tsx`/`signup.tsx`) is unvalidated end-to-end. Mitigation: each individual toggle's subtraction recipe was hand-validated in Stage 2 (commit history under `Stage 2 Task 7`–`Task 11`), so the per-toggle behavior is known good; only the *combinatorial* logic (encoded in `manifest.json`'s `post_subtraction_combinatorial.no_oauth_providers`) is untested.
+- **Test 3 — mixed (`e2e-mixed`):** ⏭️ SKIPPED. Risk: the brand-color hex→HSL conversion in Apply Step 3 and the nested `org→resend` region behavior are unvalidated end-to-end. Mitigation: nested-region stripping was implicitly exercised by Test 1 (both `org` and `resend` were `on`, so neither was stripped — but the skill's algorithm handles nesting on the strip path, so this is mostly an unexercised happy path); the HSL conversion is pure JS in the SKILL.md prose so a wrong number won't break the build.
+- **Two skill bugs surfaced by Test 1, both fixed:**
+  - `527cc29` — "press Enter to skip" doesn't work in Claude Code (the harness can't send empty messages). Replaced with explicit `default` / `skip` keywords in `interview.md` + `credentials.md`.
+  - `fb330f5` — wrangler 4.x validates `wrangler.jsonc` for *every* command (including `wrangler whoami`), so the unsubstituted `__PROJECT_SLUG__` made early Phase 4 commands fail. Added a `Step 0 — Pre-substitute the worker slug` to `cloudflare.md` so all wrangler commands work from the start of Phase 4.
+
 ## Stage 3 known limitations / things deferred
 
 - **Workers Git Integration's last step is manual.** No fully-automated API as of 2026-05-01 — after `gh repo create`, the user must connect the repo via the Cloudflare dashboard. The skill's Apply Step 9 prints the dashboard URL and walks through the click-path.
 - **Programmatic superpowers install may not work in all Claude Code versions.** Apply Step 10 writes `enabledPlugins: ["superpowers"]` into `.claude/settings.json` and falls back to printing `/plugin install superpowers` if the write fails. Treat this as best-effort; the print fallback is the never-silently-broken path.
 - **`gh` CLI is required for the Workers Git Integration auto-path.** If the user answers `y` to Q10 but `gh` is absent or unauthenticated, Apply Step 9 prints manual setup steps instead of failing.
 - **First-feature scaffold is intentionally minimal** — list + inline create form only. Edit, delete, optimistic updates, pagination, sharing UI, and tests for the new feature are deferred to the user.
-- **E2E tests not yet run by the agent.** The skill is interactive (interview-driven), and the plan's Tasks 13–15 require fresh Claude Code sessions in scratch dirs. Instructions are captured in `STAGE3_NOTES.md` for the user to run; results should be folded back into this file under a "Stage 3 E2E findings" section once available.
+- **E2E tests 2 and 3 skipped** (see "Stage 3 E2E findings" above for the unvalidated paths).
 
 ## Stage 2 patterns Stage 3 should preserve verbatim
 
