@@ -313,7 +313,7 @@ Read `scaffold-feature.md` and follow its 6 steps. The output is four new (or re
 
 After scaffolding, return to Apply Step 5b to generate the migration that covers the new schema.
 
-### Apply Step 7 — Regenerate worker types + write deploy-secrets.sh + final verification
+### Apply Step 7 — Regenerate worker types + write deploy-secrets.sh + write project README + final verification
 
 Now that `wrangler.jsonc` is fully valid (real D1 ID, real KV ID, real worker name from sentinel substitution, `do` regions stripped if applicable), regenerate the typed `Env`:
 
@@ -332,6 +332,60 @@ cat > scripts/deploy-secrets.sh <<'EOF'
 EOF
 chmod +x scripts/deploy-secrets.sh
 ```
+
+**Overwrite `README.md` with a project-focused version.** The on-disk template `README.md` describes the `quickstart-template` repo itself — it's not the right thing to ship in a scaffolded project. Replace it with a project README using the captured identity values:
+
+```bash
+cat > README.md <<EOF
+# <PROJECT_NAME>
+
+<PROJECT_DESCRIPTION>
+
+Scaffolded from [quickstart-template](https://github.com/jamescary/quickstart-template).
+
+## Develop
+
+\`\`\`bash
+pnpm install
+pnpm dev          # http://localhost:3000
+\`\`\`
+
+## Deploy
+
+\`\`\`bash
+wrangler login                    # one-time
+./scripts/deploy-secrets.sh       # pushes .dev.vars values as production secrets (one-time)
+pnpm db:migrate:remote            # push schema to production D1
+pnpm build
+wrangler deploy
+\`\`\`
+
+After your first deploy, override \`BETTER_AUTH_URL\` with the production URL:
+
+\`\`\`bash
+echo 'https://<your-worker>.workers.dev' | wrangler secret put BETTER_AUTH_URL
+VITE_BETTER_AUTH_URL='https://<your-worker>.workers.dev' pnpm build && wrangler deploy
+\`\`\`
+
+EOF
+```
+
+If `toggles.vitest == true`, append a test section:
+
+```bash
+cat >> README.md <<'EOF'
+## Test
+
+\`\`\`bash
+pnpm test
+\`\`\`
+
+Tests run against the real Cloudflare runtime via miniflare (D1, KV, Durable Objects all bind in tests).
+
+EOF
+```
+
+(The user can flesh out the README further — keep this minimal.)
 
 Final at-rest verification:
 

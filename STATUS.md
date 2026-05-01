@@ -10,17 +10,17 @@ This is the working directory for the **quickstart-template** project: a Cloudfl
 |---|---|---|
 | **Brainstorm + spec** | ✅ Done | `docs/superpowers/specs/2026-04-30-quickstart-template-design.md` |
 | **Stage 1 — reference app build** | ✅ Done (2026-05-01) | `reference/` (44 commits) deployed at `https://quickstart-reference.eliteeggnog.workers.dev`. Per-task log + Files Inventory at `reference/BUILD_NOTES.md`. Plan: `docs/superpowers/plans/2026-04-30-stage1-reference-app.md`. |
-| **Stage 2 — templatize** | ✅ Done (2026-05-01) | Reference copied to repo root with region markers + sentinels. Subtraction validated by hand for all 5 toggles. Subtraction recipes captured at `docs/superpowers/specs/2026-05-01-stage2-subtraction-recipes.md`. Plan: `docs/superpowers/plans/2026-05-01-stage2-templatize.md`. Bootstrap files (`install.sh`, `install.md`, `.quickstart-template`, user-facing `README.md`) added. Template at-rest typechecks; does not build or run until Stage 3 substitutes sentinels and provisions IDs. |
-| **Stage 3 — build setup skill** | ✅ Done (2026-05-01) | `.claude/skills/quickstart-setup/` — `SKILL.md`, `manifest.json`, `interview.md`, `cloudflare.md`, `credentials.md`, `scaffold-feature.md`, `TEMPLATE_URL`. Plan: `docs/superpowers/plans/2026-05-01-stage3-build-skill.md`. E2E tests (Tasks 13–15) require interactive Claude Code sessions in scratch dirs; instructions captured in `STAGE3_NOTES.md` for the user to run, then folded back here. `__GH_USER__` substituted to `jamescary`. Template ready to publish. |
+| **Stage 2 — templatize** | ✅ Done (2026-05-01) | Reference copied to repo root with region markers + sentinels. Subtraction validated by hand for all 5 toggles. Subtraction recipes captured at `docs/superpowers/specs/2026-05-01-stage2-subtraction-recipes.md`. Plan: `docs/superpowers/plans/2026-05-01-stage2-templatize.md`. Bootstrap files (`install.sh`, `INSTALL.md`, `.quickstart-template`, user-facing `README.md`) added. Template at-rest typechecks; does not build or run until Stage 3 substitutes sentinels and provisions IDs. |
+| **Stage 3 — build setup skill** | ✅ Done (2026-05-01) | `.claude/skills/quickstart-setup/` — `SKILL.md`, `manifest.json`, `interview.md`, `cloudflare.md`, `credentials.md`, `scaffold-feature.md`, `TEMPLATE_URL`. Plan: `docs/superpowers/plans/2026-05-01-stage3-build-skill.md`. E2E tests (Tasks 13–15) require interactive Claude Code sessions in scratch dirs; instructions captured in `STAGE3_NOTES.md` for the user to run, then folded back here. GitHub user placeholder substituted to `jamescary`. Template ready to publish. |
 
 ## Where things live
 
 ```
 /Users/jamescary/dev/quickstart-template/
 ├── STATUS.md                                    # this file
-├── README.md                                    # user-facing template README (sentinelized)
+├── README.md                                    # template-repo landing page (skill overwrites with project README in Apply Step 7)
 ├── install.sh                                   # curl-pipeable bootstrapper
-├── install.md                                   # agent-readable bootstrap
+├── INSTALL.md                                   # agent-readable bootstrap
 ├── .quickstart-template                         # marker for skill entry detection
 ├── package.json, wrangler.jsonc, tsconfig.json, ...  # full template (sentinelized)
 ├── src/, tests/, drizzle/                       # template source (region-marked)
@@ -82,7 +82,6 @@ These are the non-obvious ones, all documented in BUILD_NOTES with reasoning:
 - **`worker-configuration.d.ts` is stale-by-design.** Stage 3 must run `pnpm exec wrangler types` after stripping `wrangler.jsonc` regions and writing real IDs.
 - **Both-OAuth-providers-off cleanup is combinatorial, not in regions.** When neither GitHub nor Google is selected, the `OAuthButtons` component renders an empty div. Stage 3's skill must detect the both-off case and additionally delete `oauth-buttons.tsx` + strip imports/JSX from `login.tsx` and `signup.tsx`.
 - **`scripts/deploy-secrets.sh` is not in the template.** Stage 3 generates it during the Apply phase from the user's chosen `.dev.vars` keys.
-- **`__GH_USER__` placeholder in `install.sh` and `install.md`.** Stage 3 (or template publishing step) must replace this with the actual GitHub user/org hosting the template repo.
 - **`tsconfig.json` excludes `reference/` and `vitest.config.ts` `test.include` is scoped to `tests/`.** Both adjustments were necessary because `reference/` (Stage 1's git-ignored archive) sits at the repo root; without them, tooling spans the reference's own deps and tests. These exclusions are part of the template's permanent shape.
 
 ## Stage 3 E2E findings (2026-05-01)
