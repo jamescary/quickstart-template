@@ -1,6 +1,29 @@
 # The Stage 1 reference build is its own self-contained git repo.
-# Stage 2 will templatize it; until then, exclude from the outer template repo.
+# Stage 2 templatized it into this repo root; reference/ stays for archival.
 reference/
 
-# macOS
+# Stage 2 working notes (deleted at end of Stage 2 — see Task 14).
+STAGE2_NOTES.md
+
+# Build artifacts
+node_modules
+dist
+dist-ssr
+.output
+.vinxi
+.nitro
+.tanstack
+.wrangler
+
+# Local env / secrets
+.env
+.dev.vars
+*.local
+
+# Editor / OS
 .DS_Store
+__unconfig*
+todos.json
+
+# Drizzle generated meta — re-generated per-environment
+drizzle/migrations/meta/

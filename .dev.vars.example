@@ -1,0 +1,18 @@
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=http://localhost:3000
+
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+RESEND_API_KEY=
+# Resend test sender — only delivers to your Resend account email.
+# For production, verify a domain at https://resend.com/domains and use noreply@<your-domain>.
+RESEND_FROM_EMAIL=onboarding@resend.dev
+
+# Optional — only if you want `drizzle-kit push` or `drizzle-kit studio`.
+# `pnpm db:migrate:local` / `db:migrate:remote` use wrangler's OAuth and don't need this.
+# CLOUDFLARE_ACCOUNT_ID=
+# CLOUDFLARE_DATABASE_ID=
+# CLOUDFLARE_D1_TOKEN=

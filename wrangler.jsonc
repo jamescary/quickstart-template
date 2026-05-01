@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "quickstart-reference",
+  "compatibility_date": "2025-09-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/server.ts",
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "quickstart-reference-db",
+      "database_id": "a5f78b53-2e29-4f68-ab1b-262df76ef691",
+      "migrations_dir": "drizzle/migrations"
+    }
+  ],
+  "kv_namespaces": [
+    { "binding": "KV", "id": "5c21b215d76c49038e680801d92f5518" }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "PRESENCE", "class_name": "PresenceDO" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["PresenceDO"] }
+  ]
+}
