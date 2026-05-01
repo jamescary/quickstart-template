@@ -10,7 +10,7 @@ This is the working directory for the **quickstart-template** project: a Cloudfl
 |---|---|---|
 | **Brainstorm + spec** | ✅ Done | `docs/superpowers/specs/2026-04-30-quickstart-template-design.md` |
 | **Stage 1 — reference app build** | ✅ Done (2026-05-01) | `reference/` (44 commits) deployed at `https://quickstart-reference.eliteeggnog.workers.dev`. Per-task log + Files Inventory at `reference/BUILD_NOTES.md`. Plan: `docs/superpowers/plans/2026-04-30-stage1-reference-app.md`. |
-| **Stage 2 — templatize** | ⏳ Pending | Will copy `reference/` → repo root, wrap conditional regions with `// #region quickstart:if=X` markers per the BUILD_NOTES Files Inventory, replace literals with `__PROJECT_NAME__` sentinels, manually validate subtraction. Plan to be written. |
+| **Stage 2 — templatize** | ✅ Done (2026-05-01) | Reference copied to repo root with region markers + sentinels. Subtraction validated by hand for all 5 toggles. Subtraction recipes captured at `docs/superpowers/specs/2026-05-01-stage2-subtraction-recipes.md`. Plan: `docs/superpowers/plans/2026-05-01-stage2-templatize.md`. Bootstrap files (`install.sh`, `install.md`, `.quickstart-template`, user-facing `README.md`) added. Template at-rest typechecks; does not build or run until Stage 3 substitutes sentinels and provisions IDs. |
 | **Stage 3 — build setup skill** | ⏳ Pending | `.claude/skills/quickstart-setup/` with manifest, interview, cloudflare, credentials sub-files. Plan to be written. |
 
 ## Where things live
@@ -18,14 +18,20 @@ This is the working directory for the **quickstart-template** project: a Cloudfl
 ```
 /Users/jamescary/dev/quickstart-template/
 ├── STATUS.md                                    # this file
-├── .gitignore                                   # gitignores reference/ (it's a self-contained nested repo)
+├── README.md                                    # user-facing template README (sentinelized)
+├── install.sh                                   # curl-pipeable bootstrapper
+├── install.md                                   # agent-readable bootstrap
+├── .quickstart-template                         # marker for skill entry detection
+├── package.json, wrangler.jsonc, tsconfig.json, ...  # full template (sentinelized)
+├── src/, tests/, drizzle/                       # template source (region-marked)
 ├── docs/superpowers/
 │   ├── specs/2026-04-30-quickstart-template-design.md
-│   └── plans/2026-04-30-stage1-reference-app.md  # Stage 1 plan, marked complete
-└── reference/                                   # Stage 1 output (NESTED git repo, gitignored from outer)
+│   ├── specs/2026-05-01-stage2-subtraction-recipes.md   # Stage 2 output: per-toggle subtraction recipes (Stage 3 input)
+│   ├── plans/2026-04-30-stage1-reference-app.md   # Stage 1 plan, complete
+│   └── plans/2026-05-01-stage2-templatize.md      # Stage 2 plan, complete
+└── reference/                                   # Stage 1 output (NESTED git repo, gitignored)
     ├── BUILD_NOTES.md                           # 1145 lines: per-task log + Files Inventory
-    ├── src/, package.json, wrangler.jsonc, ...  # full working app
-    └── .git/                                    # 44 commits
+    └── ... (full working app)
 ```
 
 ## To pick up where we left off
@@ -35,7 +41,7 @@ A fresh session resuming this project should:
 1. Read this `STATUS.md`.
 2. Skim `docs/superpowers/specs/2026-04-30-quickstart-template-design.md` (the design — read at minimum the Architecture, Subtractive Transformation, and Development Plan sections).
 3. Read `reference/BUILD_NOTES.md`'s Files Inventory section near the end (the Stage 2 input).
-4. Decide what to do next — most likely **write the Stage 2 plan** using the `superpowers:writing-plans` skill, with `BUILD_NOTES.md`'s Files Inventory as the primary input. Save the resulting plan to `docs/superpowers/plans/YYYY-MM-DD-stage2-templatize.md`.
+4. Decide what to do next — most likely **write the Stage 3 plan** using the `superpowers:writing-plans` skill, with `docs/superpowers/specs/2026-05-01-stage2-subtraction-recipes.md` as the primary input for `manifest.json` and `reference/BUILD_NOTES.md` as the source for cloudflare/credentials/scaffold-feature instructions. Save the resulting plan to `docs/superpowers/plans/YYYY-MM-DD-stage3-build-skill.md`.
 
 ## Stage 1 known limitations (worth knowing for Stage 2/3)
 
@@ -58,6 +64,25 @@ These are the non-obvious ones, all documented in BUILD_NOTES with reasoning:
 7. **vitest-pool-workers v4** uses `cloudflareTest()` plugin + plain `defineConfig` (NOT `defineWorkersConfig`).
 8. **Tests can't import `createAuth`** because the `resend → svix@1.90` chain is CJS-only and Workers reject it; tests use a separate `tests/worker-entry.ts` that exports only the DO class.
 9. **Drizzle migrations applied in tests via `applyD1Migrations` from `cloudflare:test`** at module-level setup, with migrations bundled by the `cloudflareTest` plugin's `readD1Migrations`.
+
+## Stage 2 known limitations / things deferred to Stage 3
+
+- **Sentinelized template doesn't build or run as-is.** `__PROJECT_SLUG__` is rejected by `@cloudflare/vite-plugin`'s wrangler validation (`name` must match `[a-z0-9-]+`), so `pnpm build` fails post-Task-12; `pnpm test` also depends on a valid wrangler config. **Verification floor at Stage 2-rest is `pnpm typecheck` only.** Stage 3's skill must substitute sentinels and provision real IDs *before* `pnpm build` / `pnpm dev` / `pnpm test` work for the user.
+- **Schema regen is Stage 3's job.** Stage 2 leaves `src/db/auth-schema.ts` with all tables (incl. org tables) regardless of toggles. Stage 3 runs `pnpm exec @better-auth/cli generate` to regenerate the file with only the chosen plugins' tables.
+- **`worker-configuration.d.ts` is stale-by-design.** Stage 3 must run `pnpm exec wrangler types` after stripping `wrangler.jsonc` regions and writing real IDs.
+- **Both-OAuth-providers-off cleanup is combinatorial, not in regions.** When neither GitHub nor Google is selected, the `OAuthButtons` component renders an empty div. Stage 3's skill must detect the both-off case and additionally delete `oauth-buttons.tsx` + strip imports/JSX from `login.tsx` and `signup.tsx`.
+- **`scripts/deploy-secrets.sh` is not in the template.** Stage 3 generates it during the Apply phase from the user's chosen `.dev.vars` keys.
+- **`__GH_USER__` placeholder in `install.sh` and `install.md`.** Stage 3 (or template publishing step) must replace this with the actual GitHub user/org hosting the template repo.
+- **`tsconfig.json` excludes `reference/` and `vitest.config.ts` `test.include` is scoped to `tests/`.** Both adjustments were necessary because `reference/` (Stage 1's git-ignored archive) sits at the repo root; without them, tooling spans the reference's own deps and tests. These exclusions are part of the template's permanent shape.
+
+## Stage 2 patterns Stage 3 should preserve verbatim
+
+1. **Region marker syntax** has 4 variants by file type — see `docs/superpowers/specs/2026-05-01-stage2-subtraction-recipes.md` "Marker convention" section.
+2. **Stripping a region removes the marker lines themselves** along with the body. Plain non-`#region` comments are unaffected.
+3. **Nested regions encode AND logic** — outer-first stripping. The `createEmailer` import in `src/lib/auth/server.ts` uses `org` outer + `resend` inner; either toggle off strips it. Stage 3's strip implementation must support nesting.
+4. **Sentinels:** exactly `__PROJECT_NAME__`, `__PROJECT_SLUG__`, `__PROJECT_DESCRIPTION__`, `__BRAND_COLOR__`. No others. Don't invent new ones in Stage 3 — extend this list explicitly if needed.
+5. **D1/KV IDs use all-zeros placeholders, not sentinels.** The skill overwrites by binding name (`DB`, `KV`), not by detecting placeholder text.
+6. **`tests/` is whole-file deletion when `vitest` off; `tests/worker-entry.ts` is a `replace` op when `do` off.** See recipe doc Task 10.
 
 ## Live reference URL
 
