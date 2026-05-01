@@ -1,10 +1,14 @@
 BETTER_AUTH_SECRET=
 BETTER_AUTH_URL=http://localhost:3000
 
+# #region quickstart:if=oauth.github
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
+# #endregion
+# #region quickstart:if=oauth.google
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+# #endregion
 
 # #region quickstart:if=resend
 RESEND_API_KEY=

@@ -20,10 +20,14 @@ export interface AuthEnv {
   KV: KVNamespace;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
+  // #region quickstart:if=oauth.github
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
+  // #endregion
+  // #region quickstart:if=oauth.google
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  // #endregion
   // #region quickstart:if=resend
   RESEND_API_KEY?: string;
   RESEND_FROM_EMAIL?: string;
@@ -38,18 +42,22 @@ export function createAuth(
   const db = env ? drizzle(env.DB, { schema, logger: false }) : ({} as any);
 
   const social: Record<string, { clientId: string; clientSecret: string }> = {};
+  // #region quickstart:if=oauth.github
   if (env?.GITHUB_CLIENT_ID && env?.GITHUB_CLIENT_SECRET) {
     social.github = {
       clientId: env.GITHUB_CLIENT_ID,
       clientSecret: env.GITHUB_CLIENT_SECRET,
     };
   }
+  // #endregion
+  // #region quickstart:if=oauth.google
   if (env?.GOOGLE_CLIENT_ID && env?.GOOGLE_CLIENT_SECRET) {
     social.google = {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     };
   }
+  // #endregion
 
   return betterAuth({
     secret: env?.BETTER_AUTH_SECRET,

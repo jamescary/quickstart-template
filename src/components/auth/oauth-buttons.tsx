@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 export function OAuthButtons() {
   return (
     <div className="flex flex-col gap-2">
+      {/* #region quickstart:if=oauth.github */}
       <Button
         type="button"
         variant="outline"
@@ -11,6 +12,8 @@ export function OAuthButtons() {
       >
         Continue with GitHub
       </Button>
+      {/* #endregion */}
+      {/* #region quickstart:if=oauth.google */}
       <Button
         type="button"
         variant="outline"
@@ -18,6 +21,7 @@ export function OAuthButtons() {
       >
         Continue with Google
       </Button>
+      {/* #endregion */}
     </div>
   );
 }
