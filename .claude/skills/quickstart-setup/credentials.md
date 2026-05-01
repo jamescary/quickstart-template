@@ -53,8 +53,8 @@ Print this verbatim to the user:
 > Paste them here:
 
 Then ask:
-- "GitHub Client ID? (or press Enter to skip)" → capture `GITHUB_CLIENT_ID` (may be empty).
-- "GitHub Client Secret? (or press Enter to skip)" → capture `GITHUB_CLIENT_SECRET`.
+- "GitHub Client ID? (or type `skip` to leave empty)" → capture `GITHUB_CLIENT_ID` (empty if user typed `skip`).
+- "GitHub Client Secret? (or type `skip` to leave empty)" → capture `GITHUB_CLIENT_SECRET`.
 
 If both are empty, that's fine — the GitHub button on the login UI will return `PROVIDER_NOT_FOUND` until creds are added.
 
@@ -85,8 +85,8 @@ Print this verbatim:
 > Paste them here:
 
 Ask:
-- "Google Client ID? (or press Enter to skip)" → `GOOGLE_CLIENT_ID`.
-- "Google Client Secret? (or press Enter to skip)" → `GOOGLE_CLIENT_SECRET`.
+- "Google Client ID? (or type `skip` to leave empty)" → `GOOGLE_CLIENT_ID`.
+- "Google Client Secret? (or type `skip` to leave empty)" → `GOOGLE_CLIENT_SECRET`.
 
 ---
 
@@ -103,8 +103,8 @@ Print this verbatim:
 > Paste it here:
 
 Ask:
-- "Resend API key? (or press Enter to skip)" → `RESEND_API_KEY`.
-- "Resend FROM email? [onboarding@resend.dev]" → `RESEND_FROM_EMAIL` (default `onboarding@resend.dev`).
+- "Resend API key? (or type `skip` to leave empty)" → `RESEND_API_KEY`.
+- "Resend FROM email? Type `default` for `onboarding@resend.dev` or enter a different address." → `RESEND_FROM_EMAIL`.
 
 If the user skips, leave both blank — `createEmailer` falls back to dev console logging when `RESEND_API_KEY` is empty.
 
