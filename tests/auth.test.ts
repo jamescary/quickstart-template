@@ -7,8 +7,8 @@
 //   2. We can INSERT and SELECT a user row directly — the same thing
 //      better-auth's signUpEmail does internally
 
-/// <reference types="@cloudflare/vitest-pool-workers/types" />
-import { describe, it, expect } from "vitest";
+/// <reference types="@cloudflare/vitest-plugin/types" />
+import { describe, it, expect } from "vite-plus/test";
 import { env } from "cloudflare:workers";
 
 describe("D1 migrations + auth schema", () => {
@@ -25,9 +25,7 @@ describe("D1 migrations + auth schema", () => {
       .bind(id, "Vitest User", email, 0, now, now)
       .run();
 
-    const row = await env.DB.prepare(
-      "SELECT email FROM users WHERE email = ?",
-    )
+    const row = await env.DB.prepare("SELECT email FROM users WHERE email = ?")
       .bind(email)
       .first<{ email: string }>();
 
@@ -48,9 +46,11 @@ describe("D1 migrations + auth schema", () => {
       // #endregion
     ];
     for (const table of tables) {
-      const result = await env.DB
-        .prepare(`SELECT COUNT(*) as count FROM ${table}`)
-        .first<{ count: number }>();
+      const result = await env.DB.prepare(
+        `SELECT COUNT(*) as count FROM ${table}`,
+      ).first<{
+        count: number;
+      }>();
       expect(typeof result?.count).toBe("number");
     }
   });

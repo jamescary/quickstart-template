@@ -73,23 +73,23 @@
       ]
     },
     "vitest": {
-      "description": "Vitest + @cloudflare/vitest-pool-workers.",
+      "description": "Vitest (via Vite+ `vp test`) + @cloudflare/vitest-plugin.",
       "delete": [
         "tests/auth.test.ts",
         "tests/kv.test.ts",
         "tests/presence.test.ts",
         "tests/setup.ts",
         "tests/worker-entry.ts",
-        "tests",
-        "vitest.config.ts"
+        "tests"
       ],
       "strip": [
-        { "file": "tsconfig.json", "tag": "vitest" }
+        { "file": "tsconfig.json", "tag": "vitest" },
+        { "file": "vite.config.ts", "tag": "vitest" }
       ],
       "edit_json": [
         { "file": "package.json", "op": "remove_key", "path": ["scripts", "test"] },
         { "file": "package.json", "op": "remove_key", "path": ["scripts", "test:watch"] },
-        { "file": "package.json", "op": "remove_key", "path": ["devDependencies", "@cloudflare/vitest-pool-workers"] },
+        { "file": "package.json", "op": "remove_key", "path": ["devDependencies", "@cloudflare/vitest-plugin"] },
         { "file": "package.json", "op": "remove_key", "path": ["devDependencies", "@testing-library/dom"] },
         { "file": "package.json", "op": "remove_key", "path": ["devDependencies", "@testing-library/react"] },
         { "file": "package.json", "op": "remove_key", "path": ["devDependencies", "jsdom"] },

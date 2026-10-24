@@ -4,12 +4,7 @@ import { signUp } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 
 export const Route = createFileRoute("/signup")({ component: SignupPage });
@@ -32,7 +27,7 @@ function SignupPage() {
       setError(error.message ?? "Sign-up failed");
       return;
     }
-    navigate({ to: "/dashboard" });
+    void navigate({ to: "/dashboard" });
   }
 
   return (
@@ -79,7 +74,9 @@ function SignupPage() {
               {pending ? "Creating account..." : "Create account"}
             </Button>
           </form>
-          <div className="my-4 text-center text-xs text-muted-foreground">or</div>
+          <div className="my-4 text-center text-xs text-muted-foreground">
+            or
+          </div>
           <OAuthButtons />
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Already have an account?{" "}

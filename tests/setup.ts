@@ -1,7 +1,7 @@
 // Apply D1 migrations once before all tests.
 // applyD1Migrations runs outside isolated storage, so migrations persist
 // across all tests in the suite (each test still gets isolated *writes*).
-/// <reference types="@cloudflare/vitest-pool-workers/types" />
+/// <reference types="@cloudflare/vitest-plugin/types" />
 import { applyD1Migrations, type D1Migration } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 

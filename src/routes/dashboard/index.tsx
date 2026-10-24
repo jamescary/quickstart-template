@@ -4,7 +4,9 @@ import { useSession } from "@/lib/auth/client";
 import { PresenceWidget } from "@/components/presence-widget";
 // #endregion
 
-export const Route = createFileRoute("/dashboard/")({ component: DashboardHome });
+export const Route = createFileRoute("/dashboard/")({
+  component: DashboardHome,
+});
 
 function DashboardHome() {
   const { data: session, isPending } = useSession();

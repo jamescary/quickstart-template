@@ -1,18 +1,22 @@
 {
   "name": "__PROJECT_SLUG__",
-  "description": "__PROJECT_DESCRIPTION__",
   "private": true,
+  "description": "__PROJECT_DESCRIPTION__",
   "type": "module",
   "imports": {
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev --port 3000",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "dev": "vp dev --port 3000",
+    "build": "vp build",
+    "preview": "vp preview",
+    "test": "vp test run",
+    "test:watch": "vp test",
+    "lint": "vp lint",
+    "format": "vp fmt",
+    "format:check": "vp fmt --check",
     "typecheck": "tsc --noEmit",
+    "check": "vp check",
     "deploy": "pnpm run build && wrangler deploy",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply __PROJECT_SLUG__-db --local",
@@ -46,7 +50,7 @@
   "devDependencies": {
     "@better-auth/cli": "^1.4.21",
     "@cloudflare/vite-plugin": "^1.64.0",
-    "@cloudflare/vitest-pool-workers": "^0.23.0",
+    "@cloudflare/vitest-plugin": "^1.4.7",
     "@cloudflare/workers-types": "^4.20260519.1",
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/dom": "^10.4.1",
@@ -58,8 +62,9 @@
     "drizzle-kit": "^0.31.10",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
-    "vite": "^8.3.5",
-    "vitest": "^4.1.6",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:",
     "wrangler": "^4.152.0"
   }
 }

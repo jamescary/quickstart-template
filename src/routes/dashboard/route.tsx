@@ -1,4 +1,9 @@
-import { createFileRoute, Outlet, redirect, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  Link,
+} from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { authClient } from "@/lib/auth/client";
 import { getRequest } from "@tanstack/react-start/server";

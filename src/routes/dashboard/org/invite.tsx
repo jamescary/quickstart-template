@@ -29,7 +29,7 @@ function InvitePage() {
         setError(result.error.message ?? "Invite failed");
         return;
       }
-      navigate({ to: "/dashboard/org" });
+      void navigate({ to: "/dashboard/org" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invite failed");
     } finally {

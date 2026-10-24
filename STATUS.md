@@ -71,18 +71,26 @@ These are the non-obvious ones, all documented in BUILD_NOTES with reasoning:
 4. **better-auth dual-mode `createAuth(env?, cf?, baseURL?)`** — same factory works for CLI schema generation (no env) and runtime (with env). Called per-request because `env` is request-scoped on Workers.
 5. **SSR session checks use `auth.api.getSession({ headers: request.headers })`** with the server-side `createAuth` instance — not `authClient.getSession()` (which would HTTP-round-trip and fail when `VITE_BETTER_AUTH_URL` is baked at build time).
 6. **DurableObject export pattern**: create `src/server.ts` with `createServerEntry`, re-export DO classes alongside the default fetch handler, change `wrangler.jsonc` `main` to `src/server.ts`.
-7. **vitest-pool-workers v4** uses `cloudflareTest()` plugin + plain `defineConfig` (NOT `defineWorkersConfig`).
+7. **`@cloudflare/vitest-plugin`** (the renamed `vitest-pool-workers`) uses the `cloudflareTest()` plugin + plain `defineConfig` (NOT `defineWorkersConfig`). Since the Vite+ migration (2026-10-24) it lives in `vite.config.ts`: under `vp test` (`process.env.VITEST` is set) only `cloudflareTest()` loads; every other command loads the app plugins.
 8. **Tests can't import `createAuth`** because the `resend → svix@1.90` chain is CJS-only and Workers reject it; tests use a separate `tests/worker-entry.ts` that exports only the DO class.
 9. **Drizzle migrations applied in tests via `applyD1Migrations` from `cloudflare:test`** at module-level setup, with migrations bundled by the `cloudflareTest` plugin's `readD1Migrations`.
 
 ## Stage 2 known limitations / things deferred to Stage 3
 
-- **Sentinelized template doesn't build or run as-is.** `__PROJECT_SLUG__` is rejected by `@cloudflare/vite-plugin`'s wrangler validation (`name` must match `[a-z0-9-]+`), so `pnpm build` fails post-Task-12; `pnpm test` also depends on a valid wrangler config. **Verification floor at Stage 2-rest is `pnpm typecheck` only.** Stage 3's skill must substitute sentinels and provision real IDs *before* `pnpm build` / `pnpm dev` / `pnpm test` work for the user.
+- **Sentinelized template doesn't build or run as-is.** `__PROJECT_SLUG__` is rejected by `@cloudflare/vite-plugin`'s wrangler validation (`name` must match `[a-z0-9-]+`), so `pnpm build` fails post-Task-12; `pnpm test` also depends on a valid wrangler config. **Verification floor at Stage 2-rest is `pnpm check` (`vp check`: fmt + lint + typecheck) and `pnpm typecheck`.** Stage 3's skill must substitute sentinels and provision real IDs *before* `pnpm build` / `pnpm dev` / `pnpm test` work for the user.
 - **Schema regen is Stage 3's job.** Stage 2 leaves `src/db/auth-schema.ts` with all tables (incl. org tables) regardless of toggles. Stage 3 runs `pnpm exec @better-auth/cli generate` to regenerate the file with only the chosen plugins' tables.
 - **`worker-configuration.d.ts` is stale-by-design.** Stage 3 must run `pnpm exec wrangler types` after stripping `wrangler.jsonc` regions and writing real IDs.
 - **Both-OAuth-providers-off cleanup is combinatorial, not in regions.** When neither GitHub nor Google is selected, the `OAuthButtons` component renders an empty div. Stage 3's skill must detect the both-off case and additionally delete `oauth-buttons.tsx` + strip imports/JSX from `login.tsx` and `signup.tsx`.
 - **`scripts/deploy-secrets.sh` is not in the template.** Stage 3 generates it during the Apply phase from the user's chosen `.dev.vars` keys.
-- **`tsconfig.json` excludes `reference/` and `vitest.config.ts` `test.include` is scoped to `tests/`.** Both adjustments were necessary because `reference/` (Stage 1's git-ignored archive) sits at the repo root; without them, tooling spans the reference's own deps and tests. These exclusions are part of the template's permanent shape.
+- **`tsconfig.json` excludes `reference/` and the `test.include` block in `vite.config.ts` is scoped to `tests/` (with `reference/**` also in the `fmt`/`lint` ignore lists).** Both adjustments were necessary because `reference/` (Stage 1's git-ignored archive) sits at the repo root; without them, tooling spans the reference's own deps and tests. These exclusions are part of the template's permanent shape.
+
+## Vite+ migration (2026-10-24)
+
+- Tooling moved to [Vite+](https://viteplus.dev) 1.4.0: `vite` is aliased to `@voidzero-dev/vite-plus-core` via the pnpm catalog, Vitest 5.0.5 ships with it, and `vp lint` / `vp fmt` / `vp check` replace the (previously absent) linter and formatter. Scripts are `vp dev`, `vp build`, `vp preview`, `vp test run`, `vp lint`, `vp fmt`, `vp check`.
+- `@cloudflare/vitest-pool-workers` 0.23 (peer `vitest ^4`) was replaced by `@cloudflare/vitest-plugin` 1.4.7 (peer `vitest ^4 || ^5`) via `npx @cloudflare/codemods vitest:pool-workers-to-vitest-plugin`, so the workerd suites run on Vitest 5 under `vp test run`.
+- `vitest.config.ts` is gone; its content is the `test` block plus the `process.env.VITEST` branch of `plugins` in `vite.config.ts`, both wrapped in `// #region quickstart:if=vitest`. The `vitest` toggle recipe in `manifest.json` strips those regions instead of deleting the file (verified: after the strip the config typechecks, builds and formats cleanly).
+- `fmt` is pinned to `printWidth: 80` (the repo's existing style) and ignores `wrangler.jsonc` and `.claude/**` because the setup skill edits those with `sed` / exact JSON edits.
+- Verification on a sentinel-substituted copy (`qs-vp-check`): `vp check` pass, `vp test run` 3 files / 6 tests pass, `vp build` pass, `vp preview` serves `/`, `/login`, `/about` with 200.
 
 ## Stage 3 E2E findings (2026-05-01)
 
