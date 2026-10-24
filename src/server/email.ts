@@ -21,7 +21,9 @@ export function createEmailer(env: EmailEnv) {
         html: args.html,
       });
       if (error) {
-        throw new Error(`Resend error: ${error.message ?? JSON.stringify(error)}`);
+        throw new Error(
+          `Resend error: ${error.message ?? JSON.stringify(error)}`,
+        );
       }
       return data!;
     },

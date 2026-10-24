@@ -35,9 +35,16 @@ export class PresenceDO extends DurableObject {
     this.sockets.add(ws);
     ws.addEventListener("message", (e) => {
       try {
-        const msg = JSON.parse(e.data as string) as { id: string; name: string };
+        const msg = JSON.parse(e.data as string) as {
+          id: string;
+          name: string;
+        };
         if (!msg.id || !msg.name) return;
-        this.members.set(msg.id, { id: msg.id, name: msg.name, lastSeen: Date.now() });
+        this.members.set(msg.id, {
+          id: msg.id,
+          name: msg.name,
+          lastSeen: Date.now(),
+        });
         this.broadcast();
       } catch {
         // ignore malformed messages

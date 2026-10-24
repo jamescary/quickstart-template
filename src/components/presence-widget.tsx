@@ -19,7 +19,9 @@ export function PresenceWidget() {
 
     const sendPing = () => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ id: session.user.id, name: session.user.name }));
+        ws.send(
+          JSON.stringify({ id: session.user.id, name: session.user.name }),
+        );
       }
     };
 
@@ -53,7 +55,9 @@ export function PresenceWidget() {
     <div className="rounded-lg border p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">Online now</h3>
-        <span className={`h-2 w-2 rounded-full ${connected ? "bg-green-500" : "bg-gray-300"}`} />
+        <span
+          className={`h-2 w-2 rounded-full ${connected ? "bg-green-500" : "bg-gray-300"}`}
+        />
       </div>
       {!connected ? (
         <p className="mt-2 text-sm text-muted-foreground">Connecting…</p>

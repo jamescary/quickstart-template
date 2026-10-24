@@ -8,7 +8,9 @@ export function OAuthButtons() {
       <Button
         type="button"
         variant="outline"
-        onClick={() => signIn.social({ provider: "github", callbackURL: "/dashboard" })}
+        onClick={() =>
+          signIn.social({ provider: "github", callbackURL: "/dashboard" })
+        }
       >
         Continue with GitHub
       </Button>
@@ -17,7 +19,9 @@ export function OAuthButtons() {
       <Button
         type="button"
         variant="outline"
-        onClick={() => signIn.social({ provider: "google", callbackURL: "/dashboard" })}
+        onClick={() =>
+          signIn.social({ provider: "google", callbackURL: "/dashboard" })
+        }
       >
         Continue with Google
       </Button>
