@@ -22,12 +22,12 @@
     "@better-auth/drizzle-adapter": "^1.6.11",
     "@hookform/resolvers": "^5.2.2",
     "@tailwindcss/vite": "^4.3.0",
-    "@tanstack/react-devtools": "latest",
-    "@tanstack/react-router": "latest",
-    "@tanstack/react-router-devtools": "latest",
-    "@tanstack/react-router-ssr-query": "latest",
-    "@tanstack/react-start": "latest",
-    "@tanstack/router-plugin": "^1.168.6",
+    "@tanstack/react-devtools": "^0.10.13",
+    "@tanstack/react-router": "^1.170.46",
+    "@tanstack/react-router-devtools": "^1.167.2",
+    "@tanstack/react-router-ssr-query": "^1.167.3",
+    "@tanstack/react-start": "^1.169.4",
+    "@tanstack/router-plugin": "^1.168.48",
     "better-auth": "^1.6.11",
     "better-auth-cloudflare": "^0.3.0",
     "class-variance-authority": "^0.7.1",
@@ -45,8 +45,8 @@
   },
   "devDependencies": {
     "@better-auth/cli": "^1.4.21",
-    "@cloudflare/vite-plugin": "^1.37.2",
-    "@cloudflare/vitest-pool-workers": "^0.16.7",
+    "@cloudflare/vite-plugin": "^1.64.0",
+    "@cloudflare/vitest-pool-workers": "^0.23.0",
     "@cloudflare/workers-types": "^4.20260519.1",
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/dom": "^10.4.1",
@@ -58,14 +58,8 @@
     "drizzle-kit": "^0.31.10",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
-    "vite": "^8.0.13",
+    "vite": "^8.3.5",
     "vitest": "^4.1.6",
-    "wrangler": "^4.93.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lightningcss"
-    ]
+    "wrangler": "^4.152.0"
   }
 }
