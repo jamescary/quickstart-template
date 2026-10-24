@@ -27,3 +27,4 @@ todos.json
 
 # Drizzle generated meta — re-generated per-environment
 drizzle/migrations/meta/
+.vitest/

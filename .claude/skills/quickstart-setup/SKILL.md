@@ -347,7 +347,8 @@ Scaffolded from [quickstart-template](https://github.com/jamescary/quickstart-te
 
 \`\`\`bash
 pnpm install
-pnpm dev          # http://localhost:3000
+pnpm dev          # http://localhost:3000 (vp dev)
+pnpm check        # format + lint + typecheck (vp check)
 \`\`\`
 
 ## Deploy
@@ -380,7 +381,7 @@ cat >> README.md <<'EOF'
 pnpm test
 \`\`\`
 
-Tests run against the real Cloudflare runtime via miniflare (D1, KV, Durable Objects all bind in tests).
+Tests run with `vp test` (Vitest 5 via Vite+) inside workerd through `@cloudflare/vitest-plugin`, so D1, KV and Durable Objects all bind in tests. `pnpm check` runs format, lint and typecheck in one pass.
 
 EOF
 ```
@@ -392,12 +393,13 @@ Final at-rest verification:
 ```bash
 pnpm install                    # rebuild lockfile (subtract step removed deps; install consolidates)
 pnpm exec tsc --noEmit          # full typecheck against the post-substitution tree
-pnpm build                      # vite build — should now succeed because wrangler.jsonc is valid
+pnpm check                      # vp check: format + lint + typecheck against the post-substitution tree
+pnpm build                      # vp build — should now succeed because wrangler.jsonc is valid
 ```
 
 If `vitest` is on:
 ```bash
-pnpm test                       # 6 tests pass (or fewer, if `do`/`org` toggles dropped tests)
+pnpm test                       # vp test run — 6 tests pass in workerd (or fewer, if `do`/`org` toggles dropped tests)
 ```
 
 If any of the above fail, surface the error and halt. Common failure modes:

@@ -67,7 +67,7 @@ Ask in this order:
 - Capture as `toggles["do"]`.
 
 ### Q9. Vitest
-> Include vitest setup with example tests against the Cloudflare Workers pool? Type `y` or `n` (default: `y`).
+> Include `vp test` (Vitest) setup with example tests that run inside the Cloudflare Workers runtime via `@cloudflare/vitest-plugin`? Type `y` or `n` (default: `y`).
 
 - Default: `y` (recommended for any non-trivial project; re-running `pnpm test` validates the project after every change). Accept `y/yes/Y/Yes/default` as true; `n/no/N/No` as false.
 - Capture as `toggles["vitest"]`.

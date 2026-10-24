@@ -31,7 +31,7 @@ function LoginPage() {
       setError(error.message ?? "Sign-in failed");
       return;
     }
-    navigate({ to: "/dashboard" });
+    void navigate({ to: "/dashboard" });
   }
 
   return (

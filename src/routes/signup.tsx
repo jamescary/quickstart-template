@@ -32,7 +32,7 @@ function SignupPage() {
       setError(error.message ?? "Sign-up failed");
       return;
     }
-    navigate({ to: "/dashboard" });
+    void navigate({ to: "/dashboard" });
   }
 
   return (

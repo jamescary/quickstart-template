@@ -1,5 +1,5 @@
-/// <reference types="@cloudflare/vitest-pool-workers/types" />
-import { describe, it, expect } from "vitest";
+/// <reference types="@cloudflare/vitest-plugin/types" />
+import { describe, it, expect } from "vite-plus/test";
 import { env } from "cloudflare:workers";
 
 describe("KV bindings", () => {

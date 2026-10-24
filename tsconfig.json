@@ -14,7 +14,7 @@
       "vite/client",
       "@cloudflare/workers-types",
       // #region quickstart:if=vitest
-      "@cloudflare/vitest-pool-workers"
+      "@cloudflare/vitest-plugin"
       // #endregion
     ],
 
